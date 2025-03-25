@@ -16,9 +16,9 @@ export function setupPlayerControls(scene, player, camera) {
     // Move the player in the render loop
     scene.onBeforeRenderObservable.add(() => {
         const forward = new BABYLON.Vector3(
-            Math.sin(camera.rotation.y),
-            0,
-            Math.cos(camera.rotation.y)
+            Math.sin(camera.rotation.y) * Math.cos(camera.rotation.x),
+            -Math.sin(camera.rotation.x),
+            Math.cos(camera.rotation.y) * Math.cos(camera.rotation.x)
         );
         const right = new BABYLON.Vector3(
             Math.sin(camera.rotation.y + Math.PI / 2),

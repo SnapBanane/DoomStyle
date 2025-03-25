@@ -10,17 +10,17 @@ window.addEventListener('DOMContentLoaded', function () {
     const player = BABYLON.MeshBuilder.CreateSphere("player", { diameter: 1 }, scene);
     player.position.y = 1; // Adjust the player's initial position
 
+    // Create and position a free camera
     const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 1, 0), scene);
     camera.setTarget(BABYLON.Vector3.Zero());
-    camera.attachControl(canvas, true);
+    camera.attachControl(canvas, false);
 
-    engine.enterPointerlock()
+    // Attach the camera to the player
+    camera.parent = player;
 
     // Setup player controls
     setupPlayerControls(scene, player, camera);
 
-    camera.parent = player;
-    
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {
         scene.render();
