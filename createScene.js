@@ -7,8 +7,19 @@ export function createScene(engine, canvas) {
 
     const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:10, height:10});
 
-    const box = BABYLON.MeshBuilder.CreateBox("box", {width:2, height: 1.5, depth: 3});
-    box.position.y = 2;
+    const box = BABYLON.MeshBuilder.CreateBox("box", {});
+    box.position.y = 0.5;
+
+    const roof = BABYLON.MeshBuilder.CreateCylinder("roof", {diameter: 1.3, height: 1.2, tessellation: 3});
+    roof.scaling.x = 0.75;
+    roof.rotation.z = Math.PI / 2;
+    roof.position.y = 1.22;
+
+    const material = new BABYLON.StandardMaterial("name", scene);
+
+    const groundMat = new BABYLON.StandardMaterial("groundMat");
+    groundMat.diffuseColor = new BABYLON.Color3.Green();
+    ground.material = groundMat; //Place the material property of the ground
 
     return scene;
 }
