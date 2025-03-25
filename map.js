@@ -2,7 +2,7 @@ export const createScene = (engine, canvas) => {
     const scene = new BABYLON.Scene(engine);
 
     /**** Set camera and light *****/
-    const light = new BABYLON.DirectionalLight("light", new BABYLON.Vector3(0, 20, 0));
+    const light = new BABYLON.DirectionalLight("light", new BABYLON.Vector3(0, -10, 0));
     light.position = new BABYLON.Vector3(0, 10, 0);
 
     // Create an arrow to visualize the light direction
@@ -123,11 +123,7 @@ const buildRoof = (width) => {
 
 const buildArrow = (light) => {
     const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", { diameterTop: 0, diameterBottom: 0.2, height: 1, tessellation: 6 });
-    arrow.rotation.x = Math.PI / 2;
-
-    const direction = light.direction.normalize();
-    const target = light.position.add(direction.scale(10));
-    arrow.lookAt(target);
+    arrow.rotation.x = light.direction.z * Math.PI;
 
     return arrow;
 }
