@@ -1,4 +1,4 @@
-import { createScene } from './createScene.js';
+import { createScene } from './map.js';
 
 window.addEventListener('DOMContentLoaded', function () {
     const canvas = document.getElementById("renderCanvas"); // Get the canvas element

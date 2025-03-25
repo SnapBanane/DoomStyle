@@ -19,8 +19,6 @@ export const createScene = (engine, canvas) => {
     semi_house.position.z = 3;
 
     const places = []; //each entry is an array [house type, rotation, x, z]
-    places.push([1, -Math.PI / 16, -6.8, 2.5 ]);
-    places.push([2, -Math.PI / 16, -4.5, 3 ]);
     places.push([2, -Math.PI / 16, -1.5, 4 ]);
     places.push([2, -Math.PI / 3, 1.5, 6 ]);
     places.push([2, 15 * Math.PI / 16, -6.4, -1.5 ]);
