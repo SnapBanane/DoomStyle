@@ -2,8 +2,13 @@ export const createScene = (engine, canvas) => {
     const scene = new BABYLON.Scene(engine);
 
     /**** Set camera and light *****/
-    const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
-    
+    const light = new BABYLON.DirectionalLight("light", new BABYLON.Vector3(0, 20, 0));
+    light.position = new BABYLON.Vector3(0, 10, 0);
+
+    // Create an arrow to visualize the light direction
+    const arrow = buildArrow(light);
+    arrow.parent = light;
+
     const ground = buildGround();
 
     const detached_house = buildHouse(1);
@@ -114,4 +119,15 @@ const buildRoof = (width) => {
     roof.position.y = 1.22;
 
     return roof;
+}
+
+const buildArrow = (light) => {
+    const arrow = BABYLON.MeshBuilder.CreateCylinder("arrow", { diameterTop: 0, diameterBottom: 0.2, height: 1, tessellation: 6 });
+    arrow.rotation.x = Math.PI / 2;
+
+    const direction = light.direction.normalize();
+    const target = light.position.add(direction.scale(10));
+    arrow.lookAt(target);
+
+    return arrow;
 }
