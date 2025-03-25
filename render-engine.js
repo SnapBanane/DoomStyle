@@ -1,4 +1,5 @@
 import { createScene } from './map.js';
+import { setupPlayerControls } from './player.js';
 
 window.addEventListener('DOMContentLoaded', function () {
     const canvas = document.getElementById("renderCanvas"); // Get the canvas element
@@ -6,6 +7,20 @@ window.addEventListener('DOMContentLoaded', function () {
 
     const scene = createScene(engine, canvas); // Call the createScene function
 
+    const player = BABYLON.MeshBuilder.CreateSphere("player", { diameter: 1 }, scene);
+    player.position.y = 1; // Adjust the player's initial position
+
+    const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 1, 0), scene);
+    camera.setTarget(BABYLON.Vector3.Zero());
+    camera.attachControl(canvas, true);
+
+    engine.enterPointerlock()
+
+    // Setup player controls
+    setupPlayerControls(scene, player, camera);
+
+    camera.parent = player;
+    
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {
         scene.render();
