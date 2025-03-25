@@ -1,4 +1,9 @@
 export function setupPlayerControls(scene, player, camera) {
+    // Enable Babylon.js built-in collisions
+    player.checkCollisions = true;
+    player.ellipsoid = new BABYLON.Vector3(0.5, 1, 0.5);
+    player.ellipsoidOffset = new BABYLON.Vector3(0, 1, 0);
+
     // Movement variables
     const speed = 0.1;
     const keys = {};
@@ -13,7 +18,7 @@ export function setupPlayerControls(scene, player, camera) {
         }
     });
 
-    // Move the player in the render loop
+    // Move the player in the render loop with collisions
     scene.onBeforeRenderObservable.add(() => {
         const forward = new BABYLON.Vector3(
             Math.sin(camera.rotation.y) * Math.cos(camera.rotation.x),
@@ -26,9 +31,13 @@ export function setupPlayerControls(scene, player, camera) {
             Math.cos(camera.rotation.y + Math.PI / 2)
         );
 
-        if (keys["w"]) player.position.addInPlace(forward.scale(speed)); // Forward
-        if (keys["s"]) player.position.addInPlace(forward.scale(-speed)); // Backward
-        if (keys["a"]) player.position.addInPlace(right.scale(-speed)); // Left
-        if (keys["d"]) player.position.addInPlace(right.scale(speed)); // Right
+        let movement = new BABYLON.Vector3(0, 0, 0);
+        if (keys["w"]) movement.addInPlace(forward.scale(speed)); // Forward
+        if (keys["s"]) movement.addInPlace(forward.scale(-speed)); // Backward
+        if (keys["a"]) movement.addInPlace(right.scale(-speed)); // Left
+        if (keys["d"]) movement.addInPlace(right.scale(speed)); // Right
+
+        // Move player with collisions
+        player.moveWithCollisions(movement);
     });
 }
