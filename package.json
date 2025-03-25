@@ -1,0 +1,23 @@
+{
+  "name": "informatik_doomstyle",
+  "version": "1.0.0",
+  "description": "no description provided",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SnapBanane/DoomStyle.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SnapBanane/DoomStyle/issues"
+  },
+  "homepage": "https://github.com/SnapBanane/DoomStyle#readme",
+  "devDependencies": {
+    "@babylonjs/core": "^7.54.1",
+    "@babylonjs/inspector": "^7.54.1"
+  }
+}
