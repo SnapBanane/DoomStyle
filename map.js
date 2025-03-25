@@ -1,18 +1,23 @@
+import { initShadowEngine } from "./shadow-engine.js";
+
 export const createScene = (engine, canvas) => {
     const scene = new BABYLON.Scene(engine);
 
     /**** Set camera and light *****/
-    const light = new BABYLON.DirectionalLight("light", new BABYLON.Vector3(-1, -1, 0));
-    light.position = new BABYLON.Vector3(0, 10, 0);
+    const light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(-1, -1, 0), scene);
+    light.position = new BABYLON.Vector3(-10,30,0);
 
+    //build ground
     const ground = buildGround();
     ground.receiveShadows = true;
 
+    //initial instance of house
     const detached_house = buildHouse(1);
     detached_house.rotation.y = -Math.PI / 16;
     detached_house.position.x = -6.8;
     detached_house.position.z = 2.5;
 
+    //initial instance of second building
     const semi_house = buildHouse(2);
     semi_house.rotation.y = -Math.PI / 16;
     semi_house.position.x = -4.5;
@@ -49,26 +54,24 @@ export const createScene = (engine, canvas) => {
         houses[i].position.z = places[i][3];
     }
 
-    // Create a shadow generator
-    const shadowGenerator = new BABYLON.ShadowGenerator(1024, light);
-    shadowGenerator.useBlurExponentialShadowMap = true;
-    shadowGenerator.blurKernel = 32;
+    // Add all objects to the shadow engine
+    const objects = [detached_house, semi_house, ...houses];
+    initShadowEngine(scene, light, objects);
 
-    // Add all house instances to the shadow generator
-    houses.forEach(house => {
-        shadowGenerator.addShadowCaster(house);
-    });
-    
     return scene;
 }
 
 /******Build Functions***********/
 const buildGround = () => {
-    //color
-    const groundMat = new BABYLON.StandardMaterial("groundMat");
-    groundMat.diffuseColor = new BABYLON.Color3(0, 1, 0);
+    //const groundMat = new BABYLON.StandardMaterial("groundMat");
+    //groundMat.diffuseColor = new BABYLON.Color3(0, 1, 0);
 
-    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:15, height:16});
+    const groundMat = new BABYLON.StandardMaterial("StandardMaterial");
+    groundMat.roughness = 0.1;
+    groundMat.metallic = 0.1;
+    groundMat.albedoColor = BABYLON.Color3.White();
+
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:120, height:120});
     ground.material = groundMat;
 
     return ground;
