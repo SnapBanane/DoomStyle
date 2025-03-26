@@ -18,41 +18,22 @@ window.addEventListener('DOMContentLoaded', async function () {
 
     initBodyPhysics(scene);
 
-    const player = BABYLON.MeshBuilder.CreateBox("player", { width: 0.5, height: 1, depth: 0.5}, scene);
+    const player = BABYLON.MeshBuilder.CreateBox("player", { width: 0.5, height: 1.2, depth: 0.5}, scene);
     player.position = new BABYLON.Vector3(0, 5, 0);
 
     const playerAggregate = new BABYLON.PhysicsAggregate(
         player,
         BABYLON.PhysicsShapeType.BOX,
-        { mass: 1, restitution: 0.2, friction: 0.5, inertia: BABYLON.Vector3.ZeroReadOnly},
+        { mass: 1, restitution: 0.2, friction: 1, inertia: BABYLON.Vector3.ZeroReadOnly},
         scene
     );
-
-    // Apply aggregate to body
-    const playerBody = playerAggregate.body;
     
     // Create and position a free camera
     const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 1, 0), scene);
     camera.setTarget(BABYLON.Vector3.Zero());
     camera.attachControl(canvas, false);
 
-    camera.parent = player;
-
     setupPlayerControls(scene, player, camera);
-
-    let isJumping = false;
-    window.addEventListener("keydown", (event) => {
-        if (event.code === "Space" && !isJumping) {
-            isJumping = true;
-            playerBody.applyImpulse(new BABYLON.Vector3(0, 5, 0), player.getAbsolutePosition());
-        }
-    });
-
-    scene.onBeforeRenderObservable.add(() => {
-        if (playerBody.getLinearVelocity().y === 0) {
-            isJumping = false;
-        }
-    });
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {
