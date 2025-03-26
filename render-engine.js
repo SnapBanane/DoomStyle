@@ -1,19 +1,18 @@
 import { createScene } from './map.js';
 import { setupPlayerControls } from './player.js';
 import './DevKit/console.js';
+import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 
-window.addEventListener('DOMContentLoaded', function () {
+window.addEventListener('DOMContentLoaded', async function () {
 
     const canvas = document.getElementById("renderCanvas"); // Get the canvas element
     const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
-    let havokInstance;
-    HavokPhysics().then((havok) => {
-      // Havok is now available
-      havokInstance = havok;
-    });
-
     const scene = createScene(engine, canvas); // Call the createScene function
+
+    // Initialize Havok physics
+    const havokInstance = await HavokPhysics();
+    const havokPlugin = new BABYLON.HavokPlugin(true, havokInstance);
 
     const player = BABYLON.MeshBuilder.CreateSphere("player", { diameter: 1 }, scene);
 
