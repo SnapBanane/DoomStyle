@@ -24,13 +24,13 @@ window.addEventListener('DOMContentLoaded', async function () {
     const playerAggregate = new BABYLON.PhysicsAggregate(
         player,
         BABYLON.PhysicsShapeType.BOX,
-        { mass: 1, restitution: 0.2, friction: 0.5 },
+        { mass: 1, restitution: 0.2, friction: 0.5, inertia: BABYLON.Vector3.ZeroReadOnly},
         scene
     );
 
     // Apply aggregate to body
     const playerBody = playerAggregate.body;
-
+    
     // Create and position a free camera
     const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 1, 0), scene);
     camera.setTarget(BABYLON.Vector3.Zero());

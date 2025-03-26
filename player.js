@@ -1,103 +1,73 @@
 export function setupPlayerControls(scene, player, camera) {
-    // Enable Babylon.js built-in collisions
-    player.checkCollisions = true;
-    player.ellipsoid = new BABYLON.Vector3(0.5, 1, 0.5); // Adjust for box shape
-    player.ellipsoidOffset = new BABYLON.Vector3(0, 1, 0);
+    const playerBody = player.physicsBody; // FIX: Correct way to get physics body
+    const moveForce = 5;
+    let keys = { w: false, a: false, s: false, d: false };
 
-    // Movement variables
-    const speed = 0.1;
-    const keys = {};
+    if (!playerBody) {
+        console.error("Player body is undefined!");
+        return;
+    }
 
-    // Mouse look sensitivity
-    const sensitivity = 0.002;
+    // Prevent rolling
+    playerBody.setMassProperties({ inertia: BABYLON.Vector3.Zero() });
+    playerBody.setAngularVelocity(BABYLON.Vector3.Zero()); // Stop spinning
+    playerBody.setAngularDamping(1); // Smooth rotation stopping
+    playerBody.setLinearDamping(0.9); // Smooth movement stopping
+
+    // Enable pointer lock on click
+    const canvas = scene.getEngine().getRenderingCanvas();
+    canvas.addEventListener("click", () => {
+        canvas.requestPointerLock();
+    });
+
+    // Handle keyboard input
+    window.addEventListener("keydown", (event) => {
+        if (keys.hasOwnProperty(event.key)) keys[event.key] = true;
+    });
+
+    window.addEventListener("keyup", (event) => {
+        if (keys.hasOwnProperty(event.key)) keys[event.key] = false;
+    });
+
+    // Handle mouse movement for camera rotation
     let yaw = 0;
     let pitch = 0;
+    window.addEventListener("mousemove", (event) => {
+        if (document.pointerLockElement === canvas) {
+            const sensitivity = 0.002;
+            yaw += event.movementX * sensitivity;
+            pitch += event.movementY * sensitivity;
 
-    // Prevent camera roll by using quaternions
-    camera.rotationQuaternion = BABYLON.Quaternion.Identity();
-
-    // Position the camera above the player for first-person view
-    const cameraOffset = new BABYLON.Vector3(0, 1.5, 0); // Camera positioned slightly above the player
-
-    // Mouse movement for first-person view (yaw & pitch)
-    scene.onPointerObservable.add((pointerInfo) => {
-        if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
-            yaw += pointerInfo.event.movementX * sensitivity;  // Invert yaw direction (left-right)
-            pitch += pointerInfo.event.movementY * sensitivity;  // Invert pitch direction (up-down)
-
-            // Limit vertical rotation to prevent flipping
+            // Limit up/down rotation to prevent flipping
             pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
 
-            // Apply rotation to camera (yaw and pitch only)
             camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
         }
     });
 
-    // Detect keyboard inputs
-    scene.onKeyboardObservable.add((kbInfo) => {
-        const key = kbInfo.event.key.toLowerCase();
-        if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN) {
-            keys[key] = true;
-        } else if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYUP) {
-            keys[key] = false;
-        }
-    });
-
-    // Move the player in the render loop with collisions
+    // Movement logic
     scene.onBeforeRenderObservable.add(() => {
-        // Get forward and right direction vectors from camera rotation (yaw only)
+        if (!playerBody) return;
+
+        // Get forward and right vectors from the camera
         const forward = new BABYLON.Vector3(
-            Math.sin(yaw), 
-            0, 
+            Math.sin(yaw),
+            0,
             Math.cos(yaw)
         ).normalize();
+
         const right = BABYLON.Vector3.Cross(BABYLON.Axis.Y, forward).normalize();
 
-        let movement = new BABYLON.Vector3(0, 0, 0);
-        if (keys["w"]) movement.addInPlace(forward.scale(speed)); // Forward
-        if (keys["s"]) movement.addInPlace(forward.scale(-speed)); // Backward
-        if (keys["a"]) movement.addInPlace(right.scale(-speed)); // Left
-        if (keys["d"]) movement.addInPlace(right.scale(speed)); // Right
+        let moveDirection = BABYLON.Vector3.Zero();
 
-        // Move player with collisions
-        player.moveWithCollisions(movement);
+        if (keys["w"]) moveDirection.addInPlace(forward);
+        if (keys["s"]) moveDirection.subtractInPlace(forward);
+        if (keys["a"]) moveDirection.subtractInPlace(right);
+        if (keys["d"]) moveDirection.addInPlace(right);
 
-        // Update camera position to follow player without inheriting rotation
-        camera.position = player.position.add(cameraOffset);
-
-        // Ensure camera rotation is independent of the player (yaw and pitch)
-        camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
-    });
-
-    // Lock pointer for FPS-style camera movement
-    const canvas = scene.getEngine().getRenderingCanvas(); // Get the rendering canvas
-    canvas.addEventListener('click', () => {
-        // Only enter pointer lock on mouse click
-        if (!document.pointerLockElement) {
-            canvas.requestPointerLock(); // Lock pointer
+        if (!moveDirection.equals(BABYLON.Vector3.Zero())) {
+            moveDirection.normalize().scaleInPlace(moveForce);
+            playerBody.setLinearVelocity(moveDirection); // Apply force directly
         }
     });
-
-    // Event listener to unlock pointer if needed (for example, pressing "Esc")
-    window.addEventListener("keydown", (event) => {
-        if (event.code === "Escape") {
-            document.exitPointerLock();
-        }
-    });
-
-    // Optionally hide cursor when pointer is locked
-    canvas.style.cursor = 'none';
-
-    // Optional cleanup: Ensure pointer lock is exited when scene ends
-    scene.onDispose = () => {
-        if (document.pointerLockElement) {
-            document.exitPointerLock();
-        }
-    };
-
-    // Camera rotation independent of the cube
-    camera.parent = null; // Ensure the camera is not parented to the cube (to prevent roll)
-
-    // Prevent camera from going below the player or showing the cube
-    camera.minZ = 0.1; // Set minimum camera distance to avoid clipping with the player (and cube)
 }
