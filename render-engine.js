@@ -1,7 +1,9 @@
 import { createScene } from './map.js';
 import { setupPlayerControls } from './player.js';
+import './console.js';
 
 window.addEventListener('DOMContentLoaded', function () {
+
     const canvas = document.getElementById("renderCanvas"); // Get the canvas element
     const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
 
