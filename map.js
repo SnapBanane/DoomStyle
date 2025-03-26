@@ -1,7 +1,7 @@
 import { initShadowEngine } from "./shadow-engine.js";
 
 export const createScene = (engine, canvas) => {
-    const scene = new BABYLON.Scene(engine);
+    const scene = new BABYLON.Scene(engine); // empty scene
 
     const light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(-1, -1, 0), scene);
     light.position = new BABYLON.Vector3(-10,30,0);
@@ -50,6 +50,7 @@ export const createScene = (engine, canvas) => {
         houses[i].position.z = places[i][3];
     }
 
+    // shadow stuff
     ground.receiveShadows = true;
     const objects = [detached_house, semi_house, ...houses];
     initShadowEngine(scene, light, objects);

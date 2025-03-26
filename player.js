@@ -37,16 +37,7 @@ export function setupPlayerControls(scene, player, camera) {
         if (keys["a"]) movement.addInPlace(right.scale(-speed)); // Left
         if (keys["d"]) movement.addInPlace(right.scale(speed)); // Right
 
-        // Save previous position
-    let previousPosition = player.position.clone();
-
     // Move player with collisions
-    player.moveWithCollisions(movement);
-
-    // Check if movement was blocked
-    if (!player.position.equalsWithEpsilon(previousPosition, 0.001)) {
-        console.log("Collision detected!");
-        // Do something, like stop movement, play a sound, etc.
-    }
+    // player.moveWithCollisions(movement);
     });
 }
