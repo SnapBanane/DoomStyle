@@ -1,6 +1,6 @@
 import { createScene } from './map.js';
 import { setupPlayerControls } from './player.js';
-import './console.js';
+import './DevKit/console.js';
 
 window.addEventListener('DOMContentLoaded', function () {
 
