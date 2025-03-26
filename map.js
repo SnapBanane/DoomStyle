@@ -58,6 +58,20 @@ export const createScene = (engine, canvas) => {
     const objects = [detached_house, semi_house, ...houses];
     initShadowEngine(scene, light, objects);
 
+    let time = 0; // Initialize the time variable
+
+    scene.onBeforeRenderObservable.add(() => {
+        time += scene.getEngine().getDeltaTime() / 1000; // Increment time by the elapsed time in seconds
+
+        const radius = 40; // Radius of the circular path
+        const speed = 0.5; // Speed of rotation
+
+        light.position.x = Math.cos(time * speed) * radius;
+        light.position.z = Math.sin(time * speed) * radius;
+        light.position.y = 30; // Keep the light at a fixed height
+        light.direction = new BABYLON.Vector3(-light.position.x, -light.position.y, -light.position.z).normalize();
+    });
+
     return scene;
 }
 
