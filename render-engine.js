@@ -4,51 +4,50 @@ import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 
 window.addEventListener('DOMContentLoaded', async function () {
-    const canvas = document.getElementById("renderCanvas"); // Get the canvas element
-    const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true);
 
     // Initialize Havok physics
     const havokInstance = await HavokPhysics();
     const physicsPlugin = new BABYLON.HavokPlugin(true, havokInstance);
 
-    const scene = createScene(engine, canvas); // Call the createScene function
+    const scene = createScene(engine, canvas)
 
-    // Enable physics in the scene
     const gravityVector = new BABYLON.Vector3(0, -9.81, 0);
     scene.enablePhysics(gravityVector, physicsPlugin);
 
-    // Apply physics to all meshes in the scene
     initBodyPhysics(scene);
 
-    const player = BABYLON.MeshBuilder.CreateBox("player", { diameter: 1 }, scene);
-    player.position = new BABYLON.Vector3(0, 5, 0); // Start above the ground
+    const player = BABYLON.MeshBuilder.CreateBox("player", { width: 0.5, height: 1, depth: 0.5}, scene);
+    player.position = new BABYLON.Vector3(0, 5, 0);
 
-    // Create a dynamic physics body for the player
-    const playerBody = new BABYLON.PhysicsBody(player, BABYLON.PhysicsMotionType.DYNAMIC, false, scene);
-    playerBody.setMassProperties({ mass: 1 }); // Set the player's mass
-    playerBody.shape = new BABYLON.PhysicsShapeSphere(new BABYLON.Vector3(0, 0, 0), 0.5, scene); // Sphere shape
-    playerBody.shape.material = { friction: 0.5, restitution: 0.2 }; // Set friction and restitution
+    const playerAggregate = new BABYLON.PhysicsAggregate(
+        player,
+        BABYLON.PhysicsShapeType.BOX,
+        { mass: 1, restitution: 0.2, friction: 0.5 },
+        scene
+    );
+
+    // Apply aggregate to body
+    const playerBody = playerAggregate.body;
 
     // Create and position a free camera
     const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 1, 0), scene);
     camera.setTarget(BABYLON.Vector3.Zero());
     camera.attachControl(canvas, false);
 
-        camera.parent = player;
+    camera.parent = player;
 
-    // Setup player controls
     setupPlayerControls(scene, player, camera);
 
-    // Add jump functionality
-    let isJumping = false; // Prevent double jumps
+    let isJumping = false;
     window.addEventListener("keydown", (event) => {
         if (event.code === "Space" && !isJumping) {
             isJumping = true;
-            playerBody.applyImpulse(new BABYLON.Vector3(0, 5, 0), player.getAbsolutePosition()); // Apply upward force
+            playerBody.applyImpulse(new BABYLON.Vector3(0, 5, 0), player.getAbsolutePosition());
         }
     });
 
-    // Reset jump state when the player lands
     scene.onBeforeRenderObservable.add(() => {
         if (playerBody.getLinearVelocity().y === 0) {
             isJumping = false;
