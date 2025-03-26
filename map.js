@@ -3,13 +3,10 @@ import { initShadowEngine } from "./shadow-engine.js";
 export const createScene = (engine, canvas) => {
     const scene = new BABYLON.Scene(engine);
 
-    /**** Set camera and light *****/
     const light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(-1, -1, 0), scene);
     light.position = new BABYLON.Vector3(-10,30,0);
 
-    //build ground
-    const ground = buildGround();
-    ground.receiveShadows = true;
+    const ground = buildGround(scene);
 
     //initial instance of house
     const detached_house = buildHouse(1);
@@ -40,7 +37,6 @@ export const createScene = (engine, canvas) => {
     places.push([2, -Math.PI / 3, 5.25, 2 ]);
     places.push([1, -Math.PI / 3, 6, 4 ]);
 
-    //Create instances from the first two that were built 
     const houses = [];
     for (let i = 0; i < places.length; i++) {
         if (places[i][0] === 1) {
@@ -54,39 +50,34 @@ export const createScene = (engine, canvas) => {
         houses[i].position.z = places[i][3];
     }
 
-    // Add all objects to the shadow engine
+    ground.receiveShadows = true;
     const objects = [detached_house, semi_house, ...houses];
     initShadowEngine(scene, light, objects);
-
-    let time = 0; // Initialize the time variable
+    
+    /*
+    let time = 0;
 
     scene.onBeforeRenderObservable.add(() => {
-        time += scene.getEngine().getDeltaTime() / 1000; // Increment time by the elapsed time in seconds
+        time += 0.01;
+        const radius = 40;
 
-        const radius = 40; // Radius of the circular path
-        const speed = 0.5; // Speed of rotation
-
-        light.position.x = Math.cos(time * speed) * radius;
-        light.position.z = Math.sin(time * speed) * radius;
-        light.position.y = 30; // Keep the light at a fixed height
+        light.position.x = Math.cos(time) * radius;
+        light.position.z = Math.sin(time) * radius;
+        light.position.y = 30;
         light.direction = new BABYLON.Vector3(-light.position.x, -light.position.y, -light.position.z).normalize();
     });
+    */
+
+    buildSkyBox(scene);
 
     return scene;
 }
 
 /******Build Functions***********/
-const buildGround = () => {
-    //const groundMat = new BABYLON.StandardMaterial("groundMat");
-    //groundMat.diffuseColor = new BABYLON.Color3(0, 1, 0);
-
-    const groundMat = new BABYLON.StandardMaterial("StandardMaterial");
-    groundMat.roughness = 0.1;
-    groundMat.metallic = 0.1;
-    groundMat.albedoColor = BABYLON.Color3.White();
+const buildGround = (scene) => {
 
     const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:120, height:120});
-    ground.material = groundMat;
+    ground.material = getGroundMat(scene);
 
     return ground;
 }
@@ -122,7 +113,6 @@ const buildBox = (width) => {
         faceUV[2] = new BABYLON.Vector4(0.25, 0, 0.5, 1.0); //right side
         faceUV[3] = new BABYLON.Vector4(0.75, 0, 1.0, 1.0); //left side
     }
-    // top 4 and bottom 5 not seen so not set
 
     /**** World Objects *****/
     const box = BABYLON.MeshBuilder.CreateBox("box", {width: width, faceUV: faceUV, wrap: true});
@@ -145,4 +135,40 @@ const buildRoof = (width) => {
     roof.position.y = 1.22;
 
     return roof;
+}
+
+const getGroundMat = (scene) => {
+    const material = new BABYLON.StandardMaterial("material", scene);
+
+    // set size of texture
+    //
+    const scale = 80;
+    //
+    // make the texture repeat {scale} times
+
+    const texture = new BABYLON.Texture("https://pbs.twimg.com/media/DxI0X41X0AUwQSM.jpg", scene);
+    texture.uScale = scale;
+    texture.vScale = scale;
+
+    material.diffuseTexture = texture;
+
+    return material;
+}
+
+const buildSkyBox = (scene) => {
+    const skybox = BABYLON.MeshBuilder.CreateBox("skybox", {size: 100.0 }, scene);
+
+    const skyboxMaterial = new BABYLON.StandardMaterial("skybox", scene);
+    skyboxMaterial.backFaceCulling = false;
+    skyboxMaterial.disableLighting = true;
+
+    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("img/Skybox/skybox", scene);
+    skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+
+    skybox.material = skyboxMaterial;
+
+    skybox.infiniteDistance = true;
+
+
+    return skybox;
 }

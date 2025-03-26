@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@babylonjs/core": "^7.54.2",
+    "@babylonjs/materials": "^7.54.2"
+  }
+}
