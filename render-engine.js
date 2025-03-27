@@ -64,5 +64,6 @@ function initBodyPhysics(scene) {
 
         // Create a PhysicsAggregate for the object
         new BABYLON.PhysicsAggregate(element, shapeType, { mass: mass, restitution: restitution }, scene);
+        element.chechCollisions = true;
     });
 }

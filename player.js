@@ -1,4 +1,9 @@
 export function setupPlayerControls(scene, player, camera) {
+    scene.collisionsEnabled = true;
+    camera.checkCollisions = true;
+    camera.ellipsoid = new BABYLON.Vector3(1, 1, 1); // Adjust size as needed
+    camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.5, 0); // Adjust offset as needed
+
     const playerBody = player.physicsBody;
     const moveForce = 5;
     let keys = { KeyW: false, KeyA: false, KeyS: false, KeyD: false, Space: false};
@@ -73,8 +78,6 @@ export function setupPlayerControls(scene, player, camera) {
         // Check if the player is on the ground
         if (isPlayerOnGround(playerBody)) {
             if (keys["Space"]) {
-                console.log("Jumping!");
-                // playerBody.applyImpulse(new BABYLON.Vector3(0, 10, 0), player.position);
                 playerBody.setLinearVelocity(new BABYLON.Vector3(0, 5, 0));
             }
         }
