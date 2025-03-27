@@ -11,7 +11,7 @@ window.addEventListener('DOMContentLoaded', async function () {
     const havokInstance = await HavokPhysics();
     const physicsPlugin = new BABYLON.HavokPlugin(true, havokInstance);
 
-    const scene = createScene(engine, canvas)
+    const scene = createScene(engine, canvas);
 
     const gravityVector = new BABYLON.Vector3(0, -9.81, 0);
     scene.enablePhysics(gravityVector, physicsPlugin);
@@ -53,14 +53,13 @@ function initBodyPhysics(scene) {
         if (element.name && element.name.toLowerCase().includes("sphere")) {
             shapeType = BABYLON.PhysicsShapeType.SPHERE;
         } else if (element.name && element.name.toLowerCase().includes("mesh")) {
-            shapeType = BABYLON.PhysicsShapeType.MESH; // Use MESH for non-box/sphere objects
+            shapeType = BABYLON.PhysicsShapeType.MESH;
         } else {
-            shapeType = BABYLON.PhysicsShapeType.MESH; // Fallback to MESH for unknown types
+            shapeType = BABYLON.PhysicsShapeType.MESH;
         }
 
-        // Set mass and restitution for all objects
-        const mass = 0; // Static objects
-        const restitution = 0.2; // Slight bounce for all objects
+        const mass = 0;
+        const restitution = 0.2;
 
         // Create a PhysicsAggregate for the object
         new BABYLON.PhysicsAggregate(element, shapeType, { mass: mass, restitution: restitution }, scene);
