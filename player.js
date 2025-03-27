@@ -37,7 +37,7 @@ export function setupPlayerControls(scene, player, camera) {
     camera.rotationQuaternion = BABYLON.Quaternion.Identity();
 
     scene.onPointerObservable.add((pointerInfo) => {
-        if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE) {
+        if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE && document.pointerLockElement) {
             //yaw += pointerInfo.event.movementX * sensitivity;  // Invert yaw direction (left-right)
             //pitch += pointerInfo.event.movementY * sensitivity;  // Invert pitch direction (up-down)
 
@@ -95,13 +95,13 @@ export function setupPlayerControls(scene, player, camera) {
         playerBody.setLinearVelocity(moveDirection);
 
         // Update the camera position and rotation
-        camera.position = player.position.add(new BABYLON.Vector3(0, 1, 0));
+        camera.position = player.position.add(new BABYLON.Vector3(0, 0.5, 0));
         camera.rotation.Quaternion = camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
     });
 
     // Helper function to check if the player is on the ground
     function isPlayerOnGround(playerBody) {
         const velocity = playerBody.getLinearVelocity();
-        return Math.abs(velocity.y) < 0.01; // Adjust threshold as needed
+        return Math.abs(velocity.y) < 0.01;
     }
 }

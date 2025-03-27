@@ -18,7 +18,7 @@ window.addEventListener('DOMContentLoaded', async function () {
 
     initBodyPhysics(scene);
 
-    const player = BABYLON.MeshBuilder.CreateBox("player", { width: 0.5, height: 1.2, depth: 0.5}, scene);
+    const player = BABYLON.MeshBuilder.CreateBox("player", { width: 1, height: 1.2, depth: 1}, scene);
     player.position = new BABYLON.Vector3(0, 5, 0);
 
     const playerAggregate = new BABYLON.PhysicsAggregate(
