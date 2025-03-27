@@ -28,7 +28,6 @@ window.addEventListener('DOMContentLoaded', async function () {
         scene
     );
     
-    // Create and position a free camera
     const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 1, 0), scene);
     camera.setTarget(BABYLON.Vector3.Zero());
     camera.attachControl(canvas, false);
@@ -48,7 +47,6 @@ window.addEventListener('DOMContentLoaded', async function () {
 
 function initBodyPhysics(scene) {
     scene.meshes.forEach(element => {
-        // Determine the shape type based on the object
         let shapeType = BABYLON.PhysicsShapeType.BOX; // Default to BOX
         if (element.name && element.name.toLowerCase().includes("sphere")) {
             shapeType = BABYLON.PhysicsShapeType.SPHERE;
@@ -57,11 +55,9 @@ function initBodyPhysics(scene) {
         } else {
             shapeType = BABYLON.PhysicsShapeType.MESH;
         }
-
         const mass = 0;
         const restitution = 0.2;
 
-        // Create a PhysicsAggregate for the object
         new BABYLON.PhysicsAggregate(element, shapeType, { mass: mass, restitution: restitution }, scene);
         element.chechCollisions = true;
     });

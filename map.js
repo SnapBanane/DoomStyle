@@ -62,7 +62,6 @@ export const createScene = (engine, canvas) => {
     const objects = [detached_house, semi_house, ...houses];
     initShadowEngine(scene, light, objects);
     
-    /*
     let time = 0;
 
     scene.onBeforeRenderObservable.add(() => {
@@ -74,7 +73,6 @@ export const createScene = (engine, canvas) => {
         light.position.y = 30;
         light.direction = new BABYLON.Vector3(-light.position.x, -light.position.y, -light.position.z).normalize();
     });
-    */
 
     buildSkyBox(scene);
 
