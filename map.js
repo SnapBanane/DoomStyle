@@ -8,6 +8,7 @@ export const createScene = (engine, canvas) => {
 
     const ground = buildGround(scene);
 
+    //create a slope
     const slope = BABYLON.MeshBuilder.CreateCylinder("slope", {diameter: 3, height: 1.2, tessellation: 3});
     slope.position = new BABYLON.Vector3(-10, 0, 0);
     slope.scaling.x = 0.5;

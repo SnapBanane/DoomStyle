@@ -4,6 +4,7 @@ export function setupPlayerControls(scene, player, camera) {
     camera.ellipsoid = new BABYLON.Vector3(1, 1, 1); // Adjust size as needed
     camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.5, 0); // Adjust offset as needed
 
+    //init the physics body
     const playerBody = player.physicsBody;
     const moveForce = 5;
     let keys = { KeyW: false, KeyA: false, KeyS: false, KeyD: false, Space: false};
@@ -13,6 +14,7 @@ export function setupPlayerControls(scene, player, camera) {
         return;
     }
 
+    //set some parameters for physicsbody
     playerBody.setMassProperties({ inertia: BABYLON.Vector3.Zero() });
     playerBody.setAngularVelocity(BABYLON.Vector3.Zero());
     playerBody.setAngularDamping(1);
@@ -27,6 +29,7 @@ export function setupPlayerControls(scene, player, camera) {
 
     canvas.style.cursor = 'none';
 
+    //listen for incoming keys and store them in the keys object
     window.addEventListener("keydown", (event) => {
         if (keys.hasOwnProperty(event.code)) keys[event.code] = true;
     });
@@ -43,8 +46,6 @@ export function setupPlayerControls(scene, player, camera) {
 
     scene.onPointerObservable.add((pointerInfo) => {
         if (pointerInfo.type === BABYLON.PointerEventTypes.POINTERMOVE && document.pointerLockElement) {
-            //yaw += pointerInfo.event.movementX * sensitivity;  // Invert yaw direction (left-right)
-            //pitch += pointerInfo.event.movementY * sensitivity;  // Invert pitch direction (up-down)
 
             yaw += event.movementX * sensitivity; 
             pitch +=event.movementY * sensitivity;
@@ -52,8 +53,6 @@ export function setupPlayerControls(scene, player, camera) {
             pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
         }
     });
-
-    let isJumping = false;
     scene.onBeforeRenderObservable.add(() => {
         if (!playerBody) return;
 
