@@ -58,51 +58,50 @@ export function setupPlayerControls(scene, player, camera) {
             Math.cos(yaw)
         ).normalize();
 
-        const up = new BABYLON.Vector3(
-            0,
-            1,
-            0
-        ).normalize();
+        const up = new BABYLON.Vector3(0, 1, 0).normalize();
 
         const right = BABYLON.Vector3.Cross(BABYLON.Axis.Y, forward).normalize();
 
         let moveDirection = BABYLON.Vector3.Zero();
 
+        // Handle horizontal movement
         if (keys["KeyW"]) moveDirection.addInPlace(forward);
         if (keys["KeyS"]) moveDirection.subtractInPlace(forward);
         if (keys["KeyA"]) moveDirection.subtractInPlace(right);
         if (keys["KeyD"]) moveDirection.addInPlace(right);
 
-        if (keys["Space"] && !isJumping) {
-            moveDirection.addInPlace(up);
-            isJumping = true;
+        // Check if the player is on the ground
+        if (isPlayerOnGround(playerBody)) {
+            if (keys["Space"]) {
+                console.log("Jumping!");
+                // playerBody.applyImpulse(new BABYLON.Vector3(0, 10, 0), player.position);
+                playerBody.setLinearVelocity(new BABYLON.Vector3(0, 5, 0));
+            }
         }
 
-        if(isPlayerOnGround(playerBody)) isJumping = false;
+        const currentVelocity = playerBody.getLinearVelocity();
 
-        if(!isJumping && moveDirection.y <= 0) {
-            moveDirection.subtractInPlace(new BABYLON.Vector3(0, 9.81, 0));
+        const verticalVelocity = currentVelocity.y;
+
+        const horizontalDirection = new BABYLON.Vector3(moveDirection.x, 0, moveDirection.z);
+        if (!horizontalDirection.equals(BABYLON.Vector3.Zero())) {
+            horizontalDirection.normalize().scaleInPlace(moveForce);
         }
 
-        /*
-        const anyKeyPressed = Object.values(keys).some(value => value === true);
-        if (!anyKeyPressed) {
-            moveDirection = BABYLON.Vector3.Zero();
-        }
-        */
+        // Combine horizontal movement with vertical velocity
+        moveDirection = new BABYLON.Vector3(horizontalDirection.x, verticalVelocity, horizontalDirection.z);
 
-        if (!moveDirection.equals(BABYLON.Vector3.Zero())) {
-            moveDirection.normalize().scaleInPlace(moveForce);
-            playerBody.setLinearVelocity(moveDirection); // Apply force directly
-        }
+        // Apply the final velocity to the player
+        playerBody.setLinearVelocity(moveDirection);
 
-        camera.position = player.position.add(new BABYLON.Vector3(0,1,0));
+        // Update the camera position and rotation
+        camera.position = player.position.add(new BABYLON.Vector3(0, 1, 0));
         camera.rotation.Quaternion = camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
     });
 
+    // Helper function to check if the player is on the ground
     function isPlayerOnGround(playerBody) {
         const velocity = playerBody.getLinearVelocity();
-
-        return Math.abs(velocity.y) < 0.01;
+        return Math.abs(velocity.y) < 0.01; // Adjust threshold as needed
     }
 }
