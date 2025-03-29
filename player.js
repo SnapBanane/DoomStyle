@@ -1,3 +1,5 @@
+import { rayCastShoot } from "./shooting.js";
+
 export function setupPlayerControls(scene, player, camera) {
     scene.collisionsEnabled = true;
     camera.checkCollisions = true;
@@ -24,6 +26,9 @@ export function setupPlayerControls(scene, player, camera) {
     canvas.addEventListener('click', () => {
         if (!document.pointerLockElement) {
             canvas.requestPointerLock();
+        }
+        if(document.pointerLockElement) {
+            rayCastShoot(scene, camera);
         }
     });
 
