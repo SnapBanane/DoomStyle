@@ -35,7 +35,7 @@ window.addEventListener('DOMContentLoaded', async function () {
 
     setupPlayerControls(scene, player, camera);
 
-    GUI();
+    GUI(scene);
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {

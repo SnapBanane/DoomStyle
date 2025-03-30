@@ -1,4 +1,4 @@
-export const GUI = () => {
+export const GUI = (scene) => {
     const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('myUI');
 
     // Healthbar
@@ -54,6 +54,41 @@ export const GUI = () => {
     advancedTexture.addControl(bottomLine);
     advancedTexture.addControl(leftLine);
     advancedTexture.addControl(rightLine);
+
+    // Gun
+    // create gun image
+    const gunImage = new BABYLON.GUI.Image("gunImage", "img/MCGUN1/MCGUN1_frame0.png"); // Gun image
+    gunImage.width = "400px";
+    gunImage.height = "400px";
+    gunImage.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER; // Center horizontally
+    gunImage.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM; // Align to bottom
+    gunImage.left = 0; // Center horizontally
+    gunImage.top = 0; // Slightly above the bottom edge
+    advancedTexture.addControl(gunImage);
+
+    // Image Frames Array
+    const frames = [
+        "img/MCGUN1/MCGUN1_frame0.png",
+        "img/MCGUN1/MCGUN1_frame1.png",
+        "img/MCGUN1/MCGUN1_frame2.png",
+        "img/MCGUN1/MCGUN1_frame3.png"
+    ];
+
+    let currentFrame = 0;
+
+    // Change Image on Click
+    scene.onPointerDown = function switchFrame() {
+        const startFrame = currentFrame; // Store the starting frame
+        let frameIndex = 1; // Start from the second frame
+        const interval = setInterval(() => {
+            gunImage.source = frames[frameIndex]; // Set the current frame
+            frameIndex = (frameIndex + 1) % frames.length; // Move to the next frame
+            if (frameIndex === 1) { // Stop when it loops back to the second frame
+                gunImage.source = frames[startFrame]; // Reset to the starting frame
+                clearInterval(interval); // Stop cycling
+            }
+        }, 30); // Change frame every 30ms
+    };
 
     return advancedTexture;
 };
