@@ -10,9 +10,9 @@ export const GUI = (scene) => {
     healthBarContainer.thickness = 2;
     healthBarContainer.background = "black";
     healthBarContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-    healthBarContainer.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+    healthBarContainer.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM; // Align to bottom
     healthBarContainer.left = 20;
-    healthBarContainer.top = 20;
+    healthBarContainer.top = -20; // Adjust slightly above the bottom edge
     advancedTexture.addControl(healthBarContainer);
 
     // make the actual Healthbar
