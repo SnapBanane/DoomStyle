@@ -1,6 +1,6 @@
 import { createScene } from './map.js';
 import { setupPlayerControls } from './player.js';
-import { GUI } from './GUI';
+import { GUI } from './gui.js';
 import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 
