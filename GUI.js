@@ -1,11 +1,11 @@
 export const GUI = (scene) => {
-    const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('myUI');
+    const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
     // Healthbar
     // setup Healthbar container
     const healthBarContainer = new BABYLON.GUI.Rectangle();
-    healthBarContainer.width = "200px";
-    healthBarContainer.height = "20px";
+    healthBarContainer.width = "300px";
+    healthBarContainer.height = "30px";
     healthBarContainer.color = "white";
     healthBarContainer.thickness = 2;
     healthBarContainer.background = "black";
@@ -19,7 +19,7 @@ export const GUI = (scene) => {
     const healthBar = new BABYLON.GUI.Rectangle();
     healthBar.width = "100%";
     healthBar.height = "100%";
-    healthBar.background = "red";
+    healthBar.background = "green";
     healthBarContainer.addControl(healthBar);
 
     // Function to update health bar
