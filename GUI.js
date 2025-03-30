@@ -29,6 +29,7 @@ export const GUI = (scene) => {
 
     // Crosshair
     // create line element for crosshair
+    /*
     function createCrosshairLine(width, height, x, y) {
         const line = new BABYLON.GUI.Rectangle();
         line.width = width;
@@ -48,12 +49,13 @@ export const GUI = (scene) => {
     const bottomLine = createCrosshairLine("2px", "10px", 0, 8);
     const leftLine = createCrosshairLine("10px", "2px", -8, 0);
     const rightLine = createCrosshairLine("10px", "2px", 8, 0);
-
+    
     // Add crosshair to HUD
     advancedTexture.addControl(topLine);
     advancedTexture.addControl(bottomLine);
     advancedTexture.addControl(leftLine);
     advancedTexture.addControl(rightLine);
+    */
 
     // Gun
     // create gun image
