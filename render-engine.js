@@ -1,5 +1,6 @@
 import { createScene } from './map.js';
 import { setupPlayerControls } from './player.js';
+import { GUI } from './GUI';
 import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 
@@ -33,6 +34,8 @@ window.addEventListener('DOMContentLoaded', async function () {
     camera.attachControl(canvas, false);
 
     setupPlayerControls(scene, player, camera);
+
+    GUI();
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {
