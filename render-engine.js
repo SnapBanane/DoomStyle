@@ -1,6 +1,7 @@
 import { createScene } from './map.js';
 import { setupPlayerControls } from './player.js';
 import { GUI } from './GUI.js';
+import { aiForEnemy } from './enemy.js';
 import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 
@@ -28,6 +29,16 @@ window.addEventListener('DOMContentLoaded', async function () {
         { mass: 1, restitution: 0.2, friction: 1, inertia: BABYLON.Vector3.ZeroReadOnly},
         scene
     );
+
+    const enemy = BABYLON.MeshBuilder.CreateBox("enemy", { width: 1, height: 1.2, depth: 1}, scene);
+    enemy.position = new BABYLON.Vector3(0, 5, 0);
+
+    const enemyAggregate = new BABYLON.PhysicsAggregate(
+        enemy,
+        BABYLON.PhysicsShapeType.BOX,
+        { mass: 1, restitution: 0.2, friction: 1, inertia: BABYLON.Vector3.ZeroReadOnly },
+        scene
+    );
     
     const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 1, 0), scene);
     camera.setTarget(BABYLON.Vector3.Zero());
@@ -36,6 +47,8 @@ window.addEventListener('DOMContentLoaded', async function () {
     setupPlayerControls(scene, player, camera);
 
     GUI(scene);
+
+    aiForEnemy(enemy, scene);
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {
