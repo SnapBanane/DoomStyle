@@ -101,8 +101,9 @@ export function setupPlayerControls(scene, player, camera) {
         playerBody.setLinearVelocity(moveDirection);
 
         // Dynamically calculate the camera offset to always stay behind the player
-        const cameraOffset = forward.scale(-0.5).add(new BABYLON.Vector3(0, 0.5, 0)); // 2 units behind and 0.5 units above
-        camera.position = player.position.add(cameraOffset);
+        // const cameraOffset = forward.scale(-0.5).add(new BABYLON.Vector3(0, 0.5, 0)); // 2 units behind and 0.5 units above
+        // camera.position = player.position.add(cameraOffset);
+        camera.position = player.position.add(new BABYLON.Vector3(0, 0.5, 0));
 
         // Update the camera rotation
         camera.rotation.Quaternion = camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
