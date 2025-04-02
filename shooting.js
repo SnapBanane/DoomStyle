@@ -3,7 +3,7 @@ export function rayCastShoot(scene, camera) {
     const forward = camera.getDirection(BABYLON.Axis.Z);
     const rayLength = 1000;
 
-    const offsetDistance = 1;
+    const offsetDistance = 2;
     const rayOrigin = origin.add(forward.scale(offsetDistance));
 
     const ray = new BABYLON.Ray(rayOrigin, forward, rayLength);
