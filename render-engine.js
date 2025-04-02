@@ -31,7 +31,7 @@ window.addEventListener('DOMContentLoaded', async function () {
     );
 
     const enemy = BABYLON.MeshBuilder.CreateBox("enemy", { width: 1, height: 1.2, depth: 1}, scene);
-    enemy.position = new BABYLON.Vector3(0, 5, 0);
+    enemy.position = new BABYLON.Vector3(15, 5, 15); // Spawn enemy away from the middle
 
     const enemyAggregate = new BABYLON.PhysicsAggregate(
         enemy,

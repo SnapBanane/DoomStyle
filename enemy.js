@@ -20,18 +20,18 @@ export function aiForEnemy(enemy, scene) {
             enemy.rotation.y = angle + Math.PI / 2; // Adjust rotation to face the player
 
             // Check if the enemy is hit
-            const hit = rayCastShoot.hit;
-            if (hit && hit.pickedMesh === enemy) {
+            if (enemy.isHit) {
                 enemyHealth -= 10; // Reduce enemy health
-                console.log("Enemy hit! Health:", enemyHealth);
+                console.log("Enemy health reduced to:", enemyHealth);
 
                 if (enemyHealth <= 0) {
                     console.log("Enemy defeated!");
                     enemy.dispose(); // Remove the enemy from the scene
                 }
 
-                // Reset the hit to avoid multiple detections
-                rayCastShoot.hit = null;
+                // Reset the isHit flag to avoid multiple detections
+                enemy.isHit = false;
+                console.log("isHit reset to false for the enemy.");
             }
         });
     }
