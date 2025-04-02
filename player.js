@@ -1,10 +1,10 @@
 import { rayCastShoot } from "./shooting.js";
 
 export function setupPlayerControls(scene, player, camera) {
-    scene.collisionsEnabled = true;
-    camera.checkCollisions = true;
-    camera.ellipsoid = new BABYLON.Vector3(1, 1, 1); // Adjust size as needed
-    camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.5, 0); // Adjust offset as needed
+    scene.collisionsEnabled = true; // Enable collisions in the scene
+    camera.checkCollisions = true; // Enable collision detection for the camera
+    camera.ellipsoid = new BABYLON.Vector3(1, 1, 1); // Define the ellipsoid size for the camera
+    camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.5, 0); // Offset the ellipsoid to match the camera's position
 
     //init the physics body
     const playerBody = player.physicsBody;
@@ -101,8 +101,11 @@ export function setupPlayerControls(scene, player, camera) {
         // Apply the final velocity to the player
         playerBody.setLinearVelocity(moveDirection);
 
-        // Update the camera position and rotation
-        camera.position = player.position.add(new BABYLON.Vector3(0, 0.5, 0));
+        // Dynamically calculate the camera offset to always stay behind the player
+        const cameraOffset = forward.scale(-0.5).add(new BABYLON.Vector3(0, 0.5, 0)); // 2 units behind and 0.5 units above
+        camera.position = player.position.add(cameraOffset);
+
+        // Update the camera rotation
         camera.rotation.Quaternion = camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
     });
 
