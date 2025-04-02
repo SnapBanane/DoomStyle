@@ -1,10 +1,10 @@
 import { rayCastShoot } from "./shooting.js";
 
 export function setupPlayerControls(scene, player, camera) {
-    scene.collisionsEnabled = true; // Enable collisions in the scene
-    camera.checkCollisions = true; // Enable collision detection for the camera
-    camera.ellipsoid = new BABYLON.Vector3(1, 1, 1); // Define the ellipsoid size for the camera
-    camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.5, 0); // Offset the ellipsoid to match the camera's position
+    scene.collisionsEnabled = true;
+    camera.checkCollisions = true;
+    camera.ellipsoid = new BABYLON.Vector3(1, 1, 1); 
+    camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.5, 0);
 
     //init the physics body
     const playerBody = player.physicsBody;
@@ -95,7 +95,6 @@ export function setupPlayerControls(scene, player, camera) {
             horizontalDirection.normalize().scaleInPlace(moveForce);
         }
 
-        // Combine horizontal movement with vertical velocity
         moveDirection = new BABYLON.Vector3(horizontalDirection.x, verticalVelocity, horizontalDirection.z);
 
         // Apply the final velocity to the player
@@ -109,7 +108,6 @@ export function setupPlayerControls(scene, player, camera) {
         camera.rotation.Quaternion = camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
     });
 
-    // Helper function to check if the player is on the ground
     function isPlayerOnGround(playerBody) {
         const velocity = playerBody.getLinearVelocity();
         return Math.abs(velocity.y) < 0.01;
