@@ -105,7 +105,6 @@ export function setupPlayerControls(scene, player, camera) {
         // camera.position = player.position.add(cameraOffset);
         camera.position = player.position.add(new BABYLON.Vector3(0, 0.5, 0));
 
-        // Update the camera rotation
         camera.rotation.Quaternion = camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
     });
 
