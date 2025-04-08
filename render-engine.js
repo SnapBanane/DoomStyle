@@ -1,7 +1,7 @@
-import { createScene } from './map.js';
+import { createScene } from './map/map.js';
 import { setupPlayerControls } from './player.js';
 import { GUI } from './GUI.js';
-import { aiForEnemy } from './enemy.js';
+import { aiForEnemy } from './enemy/enemy.js';
 import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 
