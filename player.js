@@ -58,6 +58,7 @@ export function setupPlayerControls(scene, player, camera) {
             pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
         }
     });
+
     scene.onBeforeRenderObservable.add(() => {
         if (!playerBody) return;
 
@@ -67,17 +68,23 @@ export function setupPlayerControls(scene, player, camera) {
             Math.cos(yaw)
         ).normalize();
 
-        const up = new BABYLON.Vector3(0, 1, 0).normalize();
-
         const right = BABYLON.Vector3.Cross(BABYLON.Axis.Y, forward).normalize();
 
         let moveDirection = BABYLON.Vector3.Zero();
 
-        // Handle horizontal movement
-        if (keys["KeyW"]) moveDirection.addInPlace(forward);
-        if (keys["KeyS"]) moveDirection.subtractInPlace(forward);
-        if (keys["KeyA"]) moveDirection.subtractInPlace(right);
-        if (keys["KeyD"]) moveDirection.addInPlace(right);
+        // Check for obstacles and handle horizontal movement
+        if (keys["KeyW"] && !checkClip(player, camera, scene, forward, [0])) {
+            moveDirection.addInPlace(forward);
+        }
+        if (keys["KeyS"] && !checkClip(player, camera, scene, forward.scale(-1), [0])) {
+            moveDirection.subtractInPlace(forward);
+        }
+        if (keys["KeyA"] && !checkClip(player, camera, scene, right.scale(-1), [0])) {
+            moveDirection.subtractInPlace(right);
+        }
+        if (keys["KeyD"] && !checkClip(player, camera, scene, right, [0])) {
+            moveDirection.addInPlace(right);
+        }
 
         // Check if the player is on the ground
         if (isPlayerOnGround(playerBody)) {
@@ -101,10 +108,7 @@ export function setupPlayerControls(scene, player, camera) {
         playerBody.setLinearVelocity(moveDirection);
 
         // Dynamically calculate the camera offset to always stay behind the player
-        // const cameraOffset = forward.scale(-0.5).add(new BABYLON.Vector3(0, 0.5, 0)); // 2 units behind and 0.5 units above
-        // camera.position = player.position.add(cameraOffset);
         camera.position = player.position.add(new BABYLON.Vector3(0, 0.5, 0));
-
         camera.rotation.Quaternion = camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
     });
 
@@ -112,4 +116,45 @@ export function setupPlayerControls(scene, player, camera) {
         const velocity = playerBody.getLinearVelocity();
         return Math.abs(velocity.y) < 0.01;
     }
+}
+
+function checkClip(player, camera, scene, baseDirection, offsets) {
+    const rayLength = 1.25; // Adjust the length of the rays as needed
+    const rayOrigin = new BABYLON.Vector3(
+        player.position.x,
+        player.position.y + camera.ellipsoidOffset.y, // Adjust height to match the player's position
+        player.position.z
+    );
+
+    // Helper function to rotate a vector by a given angle around the Y-axis
+    function rotateVector(vector, angle) {
+        const radians = BABYLON.Tools.ToRadians(angle);
+        const cos = Math.cos(radians);
+        const sin = Math.sin(radians);
+        return new BABYLON.Vector3(
+            vector.x * cos - vector.z * sin,
+            vector.y, // Keep the y component unchanged
+            vector.x * sin + vector.z * cos
+        );
+    }
+
+    // Cast 10 rays for each offset
+    for (const offset of offsets) {
+        for (let i = 0; i < 10; i++) {
+            const angleOffset = offset + (i - 5) * 5; // Spread rays around the base offset
+            const direction = rotateVector(baseDirection, angleOffset);
+            const ray = new BABYLON.Ray(rayOrigin, direction, rayLength);
+
+            // Check for collisions, excluding the player's mesh, camera, and ray lines
+            const hit = scene.pickWithRay(ray, (mesh) => mesh !== player && mesh !== camera && !mesh.isRayLine);
+            if (hit.hit && hit.distance < rayLength) {
+                console.log(`Obstacle detected at distance: ${hit.distance}, Offset: ${angleOffset}`);
+                console.log("Hit point:", hit.pickedPoint);
+                console.log("Hit mesh name:", hit.pickedMesh?.name);
+                return true; // Obstacle detected
+            }
+        }
+    }
+
+    return false; // No obstacles detected
 }
