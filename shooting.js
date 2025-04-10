@@ -11,12 +11,13 @@ export function rayCastShoot(scene, camera) {
     const hit = scene.pickWithRay(ray);
 
     if (hit && hit.pickedMesh) {
-        console.log("Hit object:", hit.pickedMesh.name);
+        //console.log("Hit object:", hit.pickedMesh.name);
         hit.pickedMesh.isHit = true; // Set a custom property on the hit mesh
     } else {
-        console.log("No object hit by the ray.");
+        //console.log("No object hit by the ray.");
     }
 
+    /*
     const rayLine = BABYLON.MeshBuilder.CreateLines("rayLine", {
         points: [rayOrigin, rayOrigin.add(forward.scale(rayLength))],
     }, scene);
@@ -24,5 +25,6 @@ export function rayCastShoot(scene, camera) {
 
     setTimeout(() => {
         rayLine.dispose();
-    }, 1000);
+    }, 100);
+    */
 }
