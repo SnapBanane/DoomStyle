@@ -72,17 +72,17 @@ export function setupPlayerControls(scene, player, camera) {
 
         let moveDirection = BABYLON.Vector3.Zero();
 
-        // Check for obstacles and handle horizontal movement
-        if (keys["KeyW"] && !checkClip(player, camera, scene, forward, [0])) {
+        // horizontal movement
+        if (keys["KeyW"]) {
             moveDirection.addInPlace(forward);
         }
-        if (keys["KeyS"] && !checkClip(player, camera, scene, forward.scale(-1), [0])) {
+        if (keys["KeyS"]) {
             moveDirection.subtractInPlace(forward);
         }
-        if (keys["KeyA"] && !checkClip(player, camera, scene, right.scale(-1), [0])) {
+        if (keys["KeyA"]) {
             moveDirection.subtractInPlace(right);
         }
-        if (keys["KeyD"] && !checkClip(player, camera, scene, right, [0])) {
+        if (keys["KeyD"]) {
             moveDirection.addInPlace(right);
         }
 
@@ -107,7 +107,6 @@ export function setupPlayerControls(scene, player, camera) {
         // Apply the final velocity to the player
         playerBody.setLinearVelocity(moveDirection);
 
-        // Dynamically calculate the camera offset to always stay behind the player
         camera.position = player.position.add(new BABYLON.Vector3(0, 0.5, 0));
         camera.rotation.Quaternion = camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
     });
@@ -118,42 +117,40 @@ export function setupPlayerControls(scene, player, camera) {
     }
 }
 
-function checkClip(player, camera, scene, baseDirection, offsets) {
-    const rayLength = 1.25; // Adjust the length of the rays as needed
+function checkClip(player, camera, scene, baseDirection, offsets) { // deprecated function but could be used for hit detection on enemys if too close
+    const rayLength = 1;
     const rayOrigin = new BABYLON.Vector3(
         player.position.x,
-        player.position.y + camera.ellipsoidOffset.y, // Adjust height to match the player's position
+        player.position.y + camera.ellipsoidOffset.y,
         player.position.z
     );
 
-    // Helper function to rotate a vector by a given angle around the Y-axis
     function rotateVector(vector, angle) {
         const radians = BABYLON.Tools.ToRadians(angle);
         const cos = Math.cos(radians);
         const sin = Math.sin(radians);
         return new BABYLON.Vector3(
             vector.x * cos - vector.z * sin,
-            vector.y, // Keep the y component unchanged
+            vector.y,
             vector.x * sin + vector.z * cos
         );
     }
 
     for (const offset of offsets) {
-        for (let i = 0; i < 10; i++) {
-            const angleOffset = offset + (i - 5) * 5; // Spread rays around the base offset
+        for (let i = 0; i < 20; i++) {
+            const angleOffset = offset + (i - 10) * 10;
             const direction = rotateVector(baseDirection, angleOffset);
             const ray = new BABYLON.Ray(rayOrigin, direction, rayLength);
 
-            // Check for collisions, excluding the player's mesh, camera, and ray lines
             const hit = scene.pickWithRay(ray, (mesh) => mesh !== player && mesh !== camera && !mesh.isRayLine);
             if (hit.hit && hit.distance < rayLength) {
-                console.log(`Obstacle detected at distance: ${hit.distance}, Offset: ${angleOffset}`);
-                console.log("Hit point:", hit.pickedPoint);
-                console.log("Hit mesh name:", hit.pickedMesh?.name);
-                return true; // Obstacle detected
+                //console.log(`Obstacle detected at distance: ${hit.distance}, Offset: ${angleOffset}`);
+                //console.log("Hit point:", hit.pickedPoint);
+                //console.log("Hit mesh name:", hit.pickedMesh?.name);
+                return true;
             }
         }
     }
 
-    return false; // No obstacles detected
+    return false;
 }

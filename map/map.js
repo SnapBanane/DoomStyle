@@ -99,6 +99,7 @@ const buildHouse = (width) => {
 const buildBox = (width) => {
     //texture
     const boxMat = new BABYLON.StandardMaterial("boxMat");
+    boxMat.backFaceCulling = false
     if (width == 2) {
        boxMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/semihouse.png") 
     }
@@ -133,6 +134,7 @@ const buildRoof = (width) => {
     //texture
     const roofMat = new BABYLON.StandardMaterial("roofMat");
     roofMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/roof.jpg");
+    roofMat.backFaceCulling = false
 
     const roof = BABYLON.MeshBuilder.CreateCylinder("roof", {diameter: 1.3, height: 1.2, tessellation: 3});
     roof.material = roofMat;
@@ -158,6 +160,7 @@ const getGroundMat = (scene) => {
     texture.vScale = scale;
 
     material.diffuseTexture = texture;
+    material.backFaceCulling = false
 
     return material;
 }

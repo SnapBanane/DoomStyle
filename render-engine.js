@@ -61,6 +61,8 @@ window.addEventListener('DOMContentLoaded', async function () {
 
     setupPlayerControls(scene, player, camera);
 
+    camera.minZ = 0.01;
+
     GUI(scene);
 
     // Register a render loop to repeatedly render the scene
