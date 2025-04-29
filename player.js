@@ -3,7 +3,7 @@ import { rayCastShoot } from "./shooting.js";
 export function setupPlayerControls(scene, player, camera) {
     scene.collisionsEnabled = true;
     camera.checkCollisions = true;
-    camera.ellipsoid = new BABYLON.Vector3(1, 1, 1); 
+    camera.ellipsoid = new BABYLON.Vector3(1, 0.9, 1); 
     camera.ellipsoidOffset = new BABYLON.Vector3(0, 0.5, 0);
 
     //init the physics body

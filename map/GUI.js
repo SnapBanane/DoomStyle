@@ -59,14 +59,18 @@ export const GUI = (scene) => {
 
     // Gun
     // create gun image
-    const gunImage = new BABYLON.GUI.Image("gunImage", "img/MCGUN1/MCGUN1_frame0.png"); // Gun image
+    const gunImage = new BABYLON.GUI.Image("gunImage", "img/MCGUN1/MCGUN1_frame0.png");
     gunImage.width = "400px";
     gunImage.height = "300px";
-    gunImage.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER; // Center horizontally
-    gunImage.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM; // Align to bottom
-    gunImage.left = 0; // Center horizontally
-    gunImage.top = 0; // Slightly above the bottom edge
+
+    gunImage.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    gunImage.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+
+    gunImage.left = "-125px"; // move 200px left
+    gunImage.top = "0px"; 
+
     advancedTexture.addControl(gunImage);
+
 
     // Image Frames Array
     const frames = [
