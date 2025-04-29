@@ -138,7 +138,6 @@ function checkClip(player, camera, scene, baseDirection, offsets) {
         );
     }
 
-    // Cast 10 rays for each offset
     for (const offset of offsets) {
         for (let i = 0; i < 10; i++) {
             const angleOffset = offset + (i - 5) * 5; // Spread rays around the base offset
