@@ -113,7 +113,7 @@ export function setupPlayerControls(scene, player, camera) {
 }
 
 
-function isPlayerOnGround(player) {
+function isPlayerOnGround(player) { // Check if the player is on ground with raycasting
     const rayLength = 0.75;
     const offset = new BABYLON.Vector3(0, -0.5, 0);
     const rayOrigin = new BABYLON.Vector3(
@@ -122,8 +122,8 @@ function isPlayerOnGround(player) {
         player.position.z
     );
 
-    const ray = new BABYLON.Ray(rayOrigin, BABYLON.Vector3.Down(), rayLength);
-    const hit = player.getScene().pickWithRay(ray, (mesh) => mesh !== player && mesh.isPickable);
+    const ray = new BABYLON.Ray(rayOrigin, BABYLON.Vector3.Down(), rayLength); // ray down
+    const hit = player.getScene().pickWithRay(ray, (mesh) => mesh !== player && mesh.isPickable); // filter player
 
     if (hit.hit) {
         return true;
