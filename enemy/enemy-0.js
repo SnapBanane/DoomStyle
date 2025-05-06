@@ -1,7 +1,8 @@
 import { enemyDeath } from "./enemyDeath.js";
 
-export function aiForEnemy(enemy, scene) {
+export function aiForEnemy0(enemy, scene) {
     const player = scene.getMeshByName("player");
+    console.log("aiForEnemy0 called");
 
     if (player && enemy) {
         scene.onBeforeRenderObservable.add(() => {

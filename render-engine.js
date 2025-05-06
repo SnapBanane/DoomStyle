@@ -3,7 +3,9 @@ import { setupPlayerControls } from './player.js';
 import { GUI } from './map/GUI.js'; // Ensure the path starts with './'
 import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
-import { aiForEnemy } from './enemy/enemy.js'; // Import the AI function
+import { aiForEnemy0 } from './enemy/enemy-0.js';
+import { aiForEnemy1 } from './enemy/enemy-1.js';
+
 
 window.addEventListener('DOMContentLoaded', async function () {
     const canvas = document.getElementById("renderCanvas");
@@ -34,8 +36,17 @@ window.addEventListener('DOMContentLoaded', async function () {
             scene
         );
 
-        // Apply AI to the spawned enemy
-        aiForEnemy(enemy, scene);
+        let whichEnemy = Math.floor(Math.random() * 2);
+        console.log(whichEnemy);
+        if (whichEnemy == 0){
+            aiForEnemy0(enemy, scene);
+        }
+        else if (whichEnemy == 1) {
+            aiForEnemy1(enemy, scene);
+        }
+        else {
+            console.log(error);
+        }
 
         console.log(`Enemy spawned at position: [${x}, ${y}, ${z}]`);
     };
