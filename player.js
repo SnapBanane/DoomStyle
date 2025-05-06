@@ -87,7 +87,7 @@ export function setupPlayerControls(scene, player, camera) {
         }
 
         // Check if the player is on the ground
-        if (isPlayerOnGround(playerBody)) {
+        if (isPlayerOnGround(player)) {
             if (keys["Space"]) {
                 playerBody.setLinearVelocity(new BABYLON.Vector3(0, 5, 0));
             }
@@ -110,10 +110,25 @@ export function setupPlayerControls(scene, player, camera) {
         camera.position = player.position.add(new BABYLON.Vector3(0, 0.5, 0));
         camera.rotation.Quaternion = camera.rotationQuaternion = BABYLON.Quaternion.RotationYawPitchRoll(yaw, pitch, 0);
     });
+}
 
-    function isPlayerOnGround(playerBody) {
-        const velocity = playerBody.getLinearVelocity();
-        return Math.abs(velocity.y) < 0.01;
+
+function isPlayerOnGround(player) {
+    const rayLength = 0.75;
+    const offset = new BABYLON.Vector3(0, -0.5, 0);
+    const rayOrigin = new BABYLON.Vector3(
+        player.position.x,
+        player.position.y,
+        player.position.z
+    );
+
+    const ray = new BABYLON.Ray(rayOrigin, BABYLON.Vector3.Down(), rayLength);
+    const hit = player.getScene().pickWithRay(ray, (mesh) => mesh !== player && mesh.isPickable);
+
+    if (hit.hit) {
+        return true;
+    } else {
+        return false; 
     }
 }
 
