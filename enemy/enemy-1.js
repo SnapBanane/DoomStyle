@@ -2,22 +2,26 @@ import { enemyDeath } from "./enemyDeath.js";
 
 export function aiForEnemy1(enemy, scene) {
     const player = scene.getMeshByName("player");
-    console.log("aiForEnemy1 called");
-
+    
     if (player && enemy) {
+        // Store initial rotation values
+        const initialRotation = new BABYLON.Vector3(0, 0, 0);
+        enemy.rotation = initialRotation;
+        enemy.isRotating = true; // Add rotation flag
+
+        // Use the scene's observable instead of creating new ones
         scene.onBeforeRenderObservable.add(() => {
-            const direction = player.position.subtract(enemy.position).normalize();
-
-            // const enemyBody = enemy.physicsBody?.body; // Access the underlying physics body
-            // if (enemyBody && typeof enemyBody.applyForce === "function") {
-            //     const force = direction.scale(5); // Adjust force magnitude as needed
-            //     enemyBody.applyForce(force, enemy.position);
-            // }
-
+            if (enemy.isRotating) {
+                const direction = player.position.subtract(enemy.position).normalize();
+                enemy.rotation.y = -(Math.atan2(direction.z, direction.x) + Math.PI / 2);
+            }
             enemyDeath(scene, enemy);
-
-            const angle = Math.atan2(direction.z, direction.x);
-            enemy.rotation.y = angle + Math.PI / 2;
         });
+
+        // Add global function to stop/start rotation for this enemy
+        enemy.toggleRotation = () => {
+            enemy.isRotating = !enemy.isRotating;
+            console.log(`Enemy rotation ${enemy.isRotating ? 'enabled' : 'disabled'}`);
+        };
     }
 }
