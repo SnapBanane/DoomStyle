@@ -66,7 +66,7 @@ export const GUI = (scene) => {
     gunImage.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     gunImage.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
 
-    gunImage.left = "-125px"; // move 200px left
+    gunImage.left = "-110px";
     gunImage.top = "0px"; 
 
     advancedTexture.addControl(gunImage);
