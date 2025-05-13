@@ -1,4 +1,4 @@
-export const GUI = (scene) => {
+const GUI = (scene) => {
     const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
     // Healthbar
@@ -55,22 +55,22 @@ export const GUI = (scene) => {
     advancedTexture.addControl(bottomLine);
     advancedTexture.addControl(leftLine);
     advancedTexture.addControl(rightLine);
-    
+
+    return { advancedTexture }; // Export the switchFrame function
+};
+
+function switchFrame() {
+    const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
     // Gun
-    // create gun image
     const gunImage = new BABYLON.GUI.Image("gunImage", "img/MCGUN1/MCGUN1_frame0.png");
     gunImage.width = "400px";
     gunImage.height = "300px";
-
     gunImage.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
     gunImage.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
-
     gunImage.left = "-110px";
-    gunImage.top = "0px"; 
-
+    gunImage.top = "0px";
     advancedTexture.addControl(gunImage);
-
 
     // Image Frames Array
     const frames = [
@@ -82,19 +82,17 @@ export const GUI = (scene) => {
 
     let currentFrame = 0;
 
-    // Change Image on Click
-    scene.onPointerDown = function switchFrame() {
-        const startFrame = currentFrame; // Store the starting frame
-        let frameIndex = 1; // Start from the second frame
-        const interval = setInterval(() => {
-            gunImage.source = frames[frameIndex]; // Set the current frame
-            frameIndex = (frameIndex + 1) % frames.length; // Move to the next frame
-            if (frameIndex === 1) { // Stop when it loops back to the second frame
-                gunImage.source = frames[startFrame]; // Reset to the starting frame
-                clearInterval(interval); // Stop cycling
-            }
-        }, 30); // Change frame every 30ms
-    };
+    const startFrame = currentFrame; // Store the starting frame
+    let frameIndex = 1; // Start from the second frame
+    const interval = setInterval(() => {
+        gunImage.source = frames[frameIndex]; // Set the current frame
+        frameIndex = (frameIndex + 1) % frames.length; // Move to the next frame
+        if (frameIndex === 1) { // Stop when it loops back to the second frame
+            gunImage.source = frames[startFrame]; // Reset to the starting frame
+            clearInterval(interval); // Stop cycling
+        }
+    }, 30); // Change frame every 30ms
+}
 
-    return advancedTexture;
-};
+export { GUI, switchFrame };
+

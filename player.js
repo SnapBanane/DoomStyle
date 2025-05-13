@@ -1,4 +1,5 @@
 import { rayCastShoot } from "./shooting.js";
+import { throttle, throttledRayCastShoot } from "./utils.js";
 
 export function setupPlayerControls(scene, player, camera) {
     scene.collisionsEnabled = true;
@@ -28,7 +29,7 @@ export function setupPlayerControls(scene, player, camera) {
             canvas.requestPointerLock();
         }
         if(document.pointerLockElement) {
-            rayCastShoot(scene, camera);
+            throttledRayCastShoot(scene, camera);
         }
     });
 

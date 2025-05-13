@@ -1,3 +1,5 @@
+import { switchFrame } from "./map/GUI.js";
+
 export function rayCastShoot(scene, camera) {
     const origin = camera.position;
     const forward = camera.getDirection(BABYLON.Axis.Z);
@@ -16,6 +18,8 @@ export function rayCastShoot(scene, camera) {
     } else {
         //console.log("No object hit by the ray.");
     }
+
+    switchFrame();
 
     /*
     const rayLine = BABYLON.MeshBuilder.CreateLines("rayLine", {
