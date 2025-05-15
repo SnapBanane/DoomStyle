@@ -1,7 +1,15 @@
 import { rayCastShoot } from "./shooting.js";
-import { throttle, throttledRayCastShoot } from "./utils.js";
+import { GUI, switchFrame } from "./map/GUI.js";
 
 export function setupPlayerControls(scene, player, camera) {
+
+    // init GUI for player
+    const { advancedTexture, gunImage, frames } = GUI(scene);
+
+    //define shooting cooldown
+    const shootCooldown = 250; // 250 milliseconds
+    let lastShootTime = Date.now() - shootCooldown;
+
     scene.collisionsEnabled = true;
     camera.checkCollisions = true;
     camera.ellipsoid = new BABYLON.Vector3(1, 0.9, 1); 
@@ -28,8 +36,10 @@ export function setupPlayerControls(scene, player, camera) {
         if (!document.pointerLockElement) {
             canvas.requestPointerLock();
         }
-        if(document.pointerLockElement) {
-            throttledRayCastShoot(scene, camera);
+        if(document.pointerLockElement && Date.now() - lastShootTime > shootCooldown) {
+            rayCastShoot(scene, camera);
+            switchFrame(gunImage, frames);
+            lastShootTime = Date.now();
         }
     });
 

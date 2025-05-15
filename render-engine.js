@@ -1,6 +1,5 @@
 import { createScene } from './map/map.js';
 import { setupPlayerControls } from './player.js';
-import { GUI, switchFrame } from './map/GUI.js';
 import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 import { aiForEnemy0 } from './enemy/enemy-0.js';
@@ -73,10 +72,6 @@ window.addEventListener('DOMContentLoaded', async function () {
     setupPlayerControls(scene, player, camera);
 
     camera.minZ = 0.01;
-
-    GUI(scene);
-
-    switchFrame();
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {

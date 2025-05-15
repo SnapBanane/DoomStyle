@@ -2,34 +2,29 @@ const GUI = (scene) => {
     const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
     // Healthbar
-    // setup Healthbar container
     const healthBarContainer = new BABYLON.GUI.Rectangle();
     healthBarContainer.width = "300px";
     healthBarContainer.height = "30px";
     healthBarContainer.color = "white";
     healthBarContainer.thickness = 2;
     healthBarContainer.background = "black";
-    healthBarContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT; // Align to right
-    healthBarContainer.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM; // Align to bottom
+    healthBarContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    healthBarContainer.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
     healthBarContainer.left = -20;
-    healthBarContainer.top = -20; // Adjust slightly above the bottom edge
+    healthBarContainer.top = -20;
     advancedTexture.addControl(healthBarContainer);
 
-    // make the actual Healthbar
     const healthBar = new BABYLON.GUI.Rectangle();
     healthBar.width = "100%";
     healthBar.height = "100%";
     healthBar.background = "green";
     healthBarContainer.addControl(healthBar);
 
-    // Function to update health bar
     function updateHealth(percentage) {
         healthBar.width = `${percentage}%`;
     }
 
     // Crosshair
-    // create line element for crosshair
-    
     function createCrosshairLine(width, height, x, y) {
         const line = new BABYLON.GUI.Rectangle();
         line.width = width;
@@ -44,23 +39,15 @@ const GUI = (scene) => {
         return line;
     }
 
-    // Crosshair lines
     const topLine = createCrosshairLine("2px", "10px", 0, -8);
     const bottomLine = createCrosshairLine("2px", "10px", 0, 8);
     const leftLine = createCrosshairLine("10px", "2px", -8, 0);
     const rightLine = createCrosshairLine("10px", "2px", 8, 0);
-    
-    // Add crosshair to HUD
+
     advancedTexture.addControl(topLine);
     advancedTexture.addControl(bottomLine);
     advancedTexture.addControl(leftLine);
     advancedTexture.addControl(rightLine);
-
-    return { advancedTexture }; // Export the switchFrame function
-};
-
-function switchFrame() {
-    const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
     // Gun
     const gunImage = new BABYLON.GUI.Image("gunImage", "img/MCGUN1/MCGUN1_frame0.png");
@@ -80,18 +67,21 @@ function switchFrame() {
         "img/MCGUN1/MCGUN1_frame3.png"
     ];
 
-    let currentFrame = 0;
+    return { advancedTexture, gunImage, frames, updateHealth };
+};
 
-    const startFrame = currentFrame; // Store the starting frame
-    let frameIndex = 1; // Start from the second frame
+function switchFrame(gunImage, frames) {
+    let currentFrame = 0;
+    const startFrame = currentFrame;
+    let frameIndex = 1;
     const interval = setInterval(() => {
-        gunImage.source = frames[frameIndex]; // Set the current frame
-        frameIndex = (frameIndex + 1) % frames.length; // Move to the next frame
-        if (frameIndex === 1) { // Stop when it loops back to the second frame
-            gunImage.source = frames[startFrame]; // Reset to the starting frame
-            clearInterval(interval); // Stop cycling
+        gunImage.source = frames[frameIndex];
+        frameIndex = (frameIndex + 1) % frames.length;
+        if (frameIndex === 1) {
+            gunImage.source = frames[startFrame];
+            clearInterval(interval);
         }
-    }, 30); // Change frame every 30ms
+    }, 30);
 }
 
 export { GUI, switchFrame };
