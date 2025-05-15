@@ -25,7 +25,7 @@ export function aiForEnemy0(enemy, scene) {
                 enemy.rotation.y = -(angle + Math.PI / 2);
             }
 
-            enemyDeath(scene, enemy);
+            enemyDeath(enemy, 50);
         });
 
         // Add rotation toggle function

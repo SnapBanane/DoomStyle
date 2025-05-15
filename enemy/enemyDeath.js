@@ -1,21 +1,19 @@
-// This function handles the enemy's death logic
-
-export function enemyDeath(scene, enemy) {
+export function enemyDeath(enemy, enemyHealth) {
     if (enemy.isHit) {
-        // Reduce enemy health
-        if (!enemy.health) {
-            enemy.health = 100; // Initialize health if not already set
+        if (enemy.health === undefined) {
+            enemy.health = enemyHealth; 
         }
 
-        enemy.health -= 10; // Reduce health
+        enemy.health -= 10;
         console.log("Enemy health:", enemy.health);
 
         if (enemy.health <= 0) {
             console.log("Enemy defeated!");
-            enemy.dispose(); // Remove the enemy from the scene
+
+            enemy.isDead = true;
+            enemy.dispose();
         }
 
-        // Reset the isHit flag to avoid multiple detections
-        enemy.isHit = false; // Ensure this property is writable
+        enemy.isHit = false;
     }
 }

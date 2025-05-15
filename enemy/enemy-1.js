@@ -15,7 +15,12 @@ export function aiForEnemy1(enemy, scene) {
         let lastFrameTime = performance.now();
         let midFreezeCalled = false;
 
-        scene.onBeforeRenderObservable.add(() => {
+        enemy.aiObserver = scene.onBeforeRenderObservable.add(() => {            
+            if (enemy.isDead) {
+                scene.onBeforeRenderObservable.remove(enemy.aiObserver);
+                return;
+            }
+
             const now = performance.now();
             const deltaTime = now - lastFrameTime;
             lastFrameTime = now;
@@ -44,7 +49,7 @@ export function aiForEnemy1(enemy, scene) {
                 }
             }
 
-            enemyDeath(scene, enemy);
+            enemyDeath(enemy, 50);
         });
     }
 }

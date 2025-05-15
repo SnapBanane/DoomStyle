@@ -9,7 +9,7 @@ export function rayCastShootFromEnemy(scene, enemy) {
     );
 
     const rayLength = 1000;
-    const offsetDistance = 0;
+    const offsetDistance = 1;
 
     const rayOrigin = origin.add(forward.scale(offsetDistance));
     const ray = new BABYLON.Ray(rayOrigin, forward, rayLength);
