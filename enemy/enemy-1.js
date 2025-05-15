@@ -1,4 +1,5 @@
 import { enemyDeath } from "./enemyDeath.js";
+import { rayCastShootFromEnemy } from "./shootingFromEnemy.js"
 
 export function aiForEnemy1(enemy, scene) {
     const player = scene.getMeshByName("player");
@@ -38,7 +39,7 @@ export function aiForEnemy1(enemy, scene) {
                 // Check if we are in the middle 1000ms frozen phase (between 3000–4000ms)
                 // and if we are around 3500ms (±30ms to account for frame gaps)
                 if (!midFreezeCalled && cycleTime >= 3485 && cycleTime <= 3515) {
-                    onMidFreeze(enemy); // 🔔 Call your function here
+                    rayCastShootFromEnemy(scene, enemy);
                     midFreezeCalled = true;
                 }
             }
@@ -46,10 +47,4 @@ export function aiForEnemy1(enemy, scene) {
             enemyDeath(scene, enemy);
         });
     }
-}
-
-// 🔔 Replace "function" with a safe name like this:
-function onMidFreeze(enemy) {
-    console.log("Function called in the middle of freeze:", enemy.name);
-    // Your custom logic here
 }

@@ -3,13 +3,13 @@ export function rayCastShootFromEnemy(scene, enemy) {
 
     // Compute the forward direction based on enemy's rotation
     const forward = new BABYLON.Vector3(
-        Math.sin(enemy.rotation.y),
+        -(Math.sin(enemy.rotation.y)),
         0,
-        Math.cos(enemy.rotation.y)
+        -(Math.cos(enemy.rotation.y))
     );
 
     const rayLength = 1000;
-    const offsetDistance = 2;
+    const offsetDistance = 0;
 
     const rayOrigin = origin.add(forward.scale(offsetDistance));
     const ray = new BABYLON.Ray(rayOrigin, forward, rayLength);
@@ -25,13 +25,13 @@ export function rayCastShootFromEnemy(scene, enemy) {
 
     
     // Optional: visualize the ray for debugging
-    const rayLine = BABYLON.MeshBuilder.CreateLines("rayLine", {
-        points: [rayOrigin, rayOrigin.add(forward.scale(rayLength))],
-    }, scene);
-    rayLine.color = new BABYLON.Color3(1, 0, 0);
+    // const rayLine = BABYLON.MeshBuilder.CreateLines("rayLine", {
+    //     points: [rayOrigin, rayOrigin.add(forward.scale(rayLength))],
+    // }, scene);
+    // rayLine.color = new BABYLON.Color3(1, 0, 0);
 
-    setTimeout(() => {
-        rayLine.dispose();
-    }, 100);
+    // setTimeout(() => {
+    //     rayLine.dispose();
+    // }, 1000);
     
 }
