@@ -4,6 +4,7 @@ import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 import { aiForEnemy0 } from './enemy/enemy-0.js';
 import { aiForEnemy1 } from './enemy/enemy-1.js';
+import { updateHealth } from './map/GUI.js';
 
 
 window.addEventListener('DOMContentLoaded', async function () {
@@ -72,6 +73,10 @@ window.addEventListener('DOMContentLoaded', async function () {
     setupPlayerControls(scene, player, camera);
 
     camera.minZ = 0.01;
+
+    // Init Health Engine
+    player.health = 100;
+    updateHealth(player.health);
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {

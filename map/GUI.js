@@ -20,10 +20,6 @@ const GUI = (scene) => {
     healthBar.background = "green";
     healthBarContainer.addControl(healthBar);
 
-    function updateHealth(percentage) {
-        healthBar.width = `${percentage}%`;
-    }
-
     // Crosshair
     function createCrosshairLine(width, height, x, y) {
         const line = new BABYLON.GUI.Rectangle();
@@ -84,5 +80,9 @@ function switchFrame(gunImage, frames) {
     }, 30);
 }
 
-export { GUI, switchFrame };
+function updateHealth(advancedTexture, health) {
+    // placeholder not yet implememnted
+}
+
+export { GUI, switchFrame, updateHealth};
 

@@ -1,7 +1,7 @@
 import { rayCastShoot } from "./shooting.js";
 import { GUI, switchFrame } from "./map/GUI.js";
 
-export function setupPlayerControls(scene, player, camera) {
+function setupPlayerControls(scene, player, camera) {
 
     // init GUI for player
     const { advancedTexture, gunImage, frames } = GUI(scene);
@@ -180,3 +180,5 @@ function checkClip(player, camera, scene, baseDirection, offsets) { // deprecate
 
     return false;
 }
+
+export { setupPlayerControls };
