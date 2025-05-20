@@ -9,7 +9,7 @@ export function aiForEnemy1(scene, x, y, z) {
         enemyStand.physicsBody = new BABYLON.PhysicsAggregate(
             enemyStand,
             BABYLON.PhysicsShapeType.BOX,
-            { mass: 10000000000000000000000000000000000000000, restitution: 0.2, friction:1 },
+            { mass: 0, restitution: 0.2, friction:1 },
             scene
         )
 
@@ -18,7 +18,7 @@ export function aiForEnemy1(scene, x, y, z) {
         enemy.physicsBody = new BABYLON.PhysicsAggregate(
             enemy,
             BABYLON.PhysicsShapeType.BOX,
-            { mass: 10000000000000000000000000000000000000000, restitution: 0.2, friction: 1 },
+            { mass: 0, restitution: 0.2, friction: 1 },
             scene
         );
 
