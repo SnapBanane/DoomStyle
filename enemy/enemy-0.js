@@ -1,8 +1,18 @@
 import { enemyDeath } from "./enemyDeath.js";
 
-export function aiForEnemy0(enemy, scene) {
+export function aiForEnemy0(scene, x, y, z) {
     const player = scene.getMeshByName("player");
     console.log("aiForEnemy0 called");
+
+    const enemy = BABYLON.MeshBuilder.CreateBox("enemy", { width: 1, height: 1, depth: 1 }, scene);
+        enemy.position = new BABYLON.Vector3(x, y, z);
+        enemy.physicsBody = new BABYLON.PhysicsAggregate(
+            enemy,
+            BABYLON.PhysicsShapeType.BOX,
+            { mass: 1, restitution: 0.2, friction: 1 },
+            scene
+        );
+
 
     if (player && enemy) {
         // Add rotation control

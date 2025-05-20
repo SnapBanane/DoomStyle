@@ -27,22 +27,13 @@ window.addEventListener('DOMContentLoaded', async function () {
             return;
         }
 
-        const enemy = BABYLON.MeshBuilder.CreateBox("enemy", { width: 1, height: 1, depth: 1 }, scene);
-        enemy.position = new BABYLON.Vector3(x, y, z);
-        enemy.physicsBody = new BABYLON.PhysicsAggregate(
-            enemy,
-            BABYLON.PhysicsShapeType.BOX,
-            { mass: 1, restitution: 0.2, friction: 1 },
-            scene
-        );
-
         let whichEnemy = Math.floor(Math.random() * 2);
         console.log(whichEnemy);
         if (whichEnemy == 0){
-            aiForEnemy0(enemy, scene);
+            aiForEnemy0(scene, x, y, z);
         }
         else if (whichEnemy == 1) {
-            aiForEnemy1(enemy, scene);
+            aiForEnemy1(scene, x, y, z);
         }
         else {
             console.log(error);

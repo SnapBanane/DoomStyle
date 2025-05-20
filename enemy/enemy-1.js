@@ -1,8 +1,27 @@
 import { enemyDeath } from "./enemyDeath.js";
 import { rayCastShootFromEnemy } from "./shootingFromEnemy.js"
 
-export function aiForEnemy1(enemy, scene) {
+export function aiForEnemy1(scene, x, y, z) {
     const player = scene.getMeshByName("player");
+    
+    const enemyStand = BABYLON.MeshBuilder.CreateBox("enemyStand", { width: 1, height: 1, depth: 1 }, scene);
+        enemyStand.position = new BABYLON.Vector3(x, y, z)
+        enemyStand.physicsBody = new BABYLON.PhysicsAggregate(
+            enemyStand,
+            BABYLON.PhysicsShapeType.BOX,
+            { mass: 0, restitution: 0.2, friction:1 },
+            scene
+        )
+
+    const enemy = BABYLON.MeshBuilder.CreateBox("enemy", { width: 1, height: 1, depth: 1 }, scene);
+        enemy.position = new BABYLON.Vector3(x, y+1, z);
+        enemy.physicsBody = new BABYLON.PhysicsAggregate(
+            enemy,
+            BABYLON.PhysicsShapeType.BOX,
+            { mass: 0, restitution: 0.2, friction: 1 },
+            scene
+        );
+
 
     if (player && enemy) {
         let lastRotation = new BABYLON.Vector3(0, 0, 0);
