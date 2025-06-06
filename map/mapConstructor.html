@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Map Constructor</title>
+    <style>
+        body { background: #222; color: #fff; font-family: sans-serif; }
+        #canvas { background: #333; display: block; margin: 20px auto; border: 2px solid #555; }
+        #export { margin: 10px; }
+    </style>
+    <button id="copyExport">Copy</button>
+</head>
+<body>
+    <h2 style="text-align:center;">Map Constructor</h2>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <div style="text-align:center;">
+        <button id="export">Export Walls</button>
+        <pre id="output"></pre>
+    </div>
+    <script>
+        const GRID_SIZE = 40; // grid size in pixels
+
+        function snap(val) {
+            return Math.round(val / GRID_SIZE) * GRID_SIZE;
+        }
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const points = [];
+        const walls = [];
+        let selected = null;
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid
+            ctx.strokeStyle = "#444";
+            ctx.lineWidth = 1;
+            for (let gx = 0; gx < canvas.width; gx += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(gx, 0);
+                ctx.lineTo(gx, canvas.height);
+                ctx.stroke();
+            }
+            for (let gy = 0; gy < canvas.height; gy += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(0, gy);
+                ctx.lineTo(canvas.width, gy);
+                ctx.stroke();
+            }
+
+            // Draw walls
+            ctx.strokeStyle = "#0ff";
+            ctx.lineWidth = 3;
+            for (const [a, b] of walls) {
+                ctx.beginPath();
+                ctx.moveTo(points[a].x, points[a].y);
+                ctx.lineTo(points[b].x, points[b].y);
+                ctx.stroke();
+            }
+            // Draw points
+            for (let i = 0; i < points.length; i++) {
+                ctx.beginPath();
+                ctx.arc(points[i].x, points[i].y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = (i === selected) ? "#ff0" : "#fff";
+                ctx.fill();
+                ctx.strokeStyle = "#000";
+                ctx.stroke();
+            }
+        }
+
+        canvas.addEventListener('click', e => {
+            const rect = canvas.getBoundingClientRect();
+            const x = snap(e.clientX - rect.left);
+            const y = snap(e.clientY - rect.top);
+            // Check if clicked near a point
+            let idx = points.findIndex(p => Math.hypot(p.x - x, p.y - y) < 12);
+            if (idx === -1) {
+                // Add new point
+                points.push({x, y});
+                selected = points.length - 1;
+            } else {
+                if (selected !== null && selected !== idx) {
+                    // Connect selected to this point
+                    if (!walls.some(([a, b]) => (a === selected && b === idx) || (a === idx && b === selected))) {
+                        walls.push([selected, idx]);
+                    }
+                    selected = null;
+                } else {
+                    selected = idx;
+                }
+            }
+            draw();
+        });
+
+        document.getElementById('export').onclick = () => {
+            // Export as flat array of wall segments (each as two points)
+            const wallData = walls.map(([a, b]) => [
+                [points[a].x, points[a].y],
+                [points[b].x, points[b].y]
+            ]);
+            // Output as a nicely formatted JS variable for direct copy-paste
+            document.getElementById('output').textContent =
+                "const wallData = [\n" +
+                wallData.map(seg =>
+                    "    [[" + seg[0][0] + ", " + seg[0][1] + "], [" + seg[1][0] + ", " + seg[1][1] + "]]"
+                ).join(",\n") +
+                "\n];";
+        };
+
+        document.getElementById('copyExport').onclick = () => {
+            const output = document.getElementById('output');
+            navigator.clipboard.writeText(output.textContent);
+        };
+
+        draw();
+    </script>
+</body>
+</html>

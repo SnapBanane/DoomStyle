@@ -1,4 +1,5 @@
 import { initShadowEngine } from "./shadow-engine.js";
+import { buildWallsFromArray } from "./mapConstructor.js";
 
 export const createScene = (engine, canvas) => {
     const scene = new BABYLON.Scene(engine); // empty scene
@@ -8,6 +9,34 @@ export const createScene = (engine, canvas) => {
 
     const ground = buildGround(scene);
 
+    const wallDataRaw = [
+        [[40, 560], [40, 40]],
+        [[40, 40], [760, 40]]
+    ];
+
+    // Find bounds (min/max) for normalization
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    wallDataRaw.forEach(seg => {
+        seg.forEach(([x, y]) => {
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        });
+    });
+
+    const rangeX = maxX - minX;
+    const rangeY = maxY - minY;
+
+    // Normalize to 100x100, avoid division by zero
+    const norm = v => [
+        rangeX === 0 ? 50 : ((v[0] - minX) / rangeX) * 100,
+        rangeY === 0 ? 50 : ((v[1] - minY) / rangeY) * 100
+    ];
+    const wallData = wallDataRaw.map(seg => [norm(seg[0]), norm(seg[1])]);
+
+    const walls = buildWallsFromArray(scene, wallData, { height: 4, thickness: 0.5 });
+    /*
     //create a slope
     const slope = BABYLON.MeshBuilder.CreateCylinder("slope", {diameter: 3, height: 1.2, tessellation: 3});
     slope.position = new BABYLON.Vector3(-10, 0, 0);
@@ -56,24 +85,13 @@ export const createScene = (engine, canvas) => {
         houses[i].position.x = places[i][2];
         houses[i].position.z = places[i][3];
     }
+        */
 
     // shadow stuff
     ground.receiveShadows = true;
-    const objects = [detached_house, semi_house, ...houses];
+    // const objects = [detached_house, semi_house, ...houses];
+    const objects = [];
     initShadowEngine(scene, light, objects);
-    /*
-    let time = 0;
-
-    scene.onBeforeRenderObservable.add(() => {
-        time += 0.01;
-        const radius = 40;
-
-        light.position.x = Math.cos(time) * radius;
-        light.position.z = Math.sin(time) * radius;
-        light.position.y = 30;
-        light.direction = new BABYLON.Vector3(-light.position.x, -light.position.y, -light.position.z).normalize();
-    });
-    */
 
     buildSkyBox(scene);
 
@@ -155,7 +173,7 @@ const getGroundMat = (scene) => {
     //
     // make the texture repeat {scale} times
 
-    const texture = new BABYLON.Texture("https://pbs.twimg.com/media/DxI0X41X0AUwQSM.jpg", scene);
+    const texture = new BABYLON.Texture("img/textures/ground.jpg", scene);
     texture.uScale = scale;
     texture.vScale = scale;
 
