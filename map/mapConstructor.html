@@ -15,9 +15,40 @@
     <canvas id="canvas" width="800" height="600"></canvas>
     <div style="text-align:center;">
         <button id="export">Export Walls</button>
+        <button id="delete">Delete Selected</button>
         <pre id="output"></pre>
     </div>
-    <script>
+    <script type="module">
+        import { getWallData } from './mapConstructor.js';
+
+        const wallData = getWallData();
+        const points = [];
+        const walls = [];
+
+        // Flatten wallData into points and walls for the editor
+        const pointMap = {};
+        let idx = 0;
+        wallData.flat().forEach(([x, y]) => {
+            const key = `${x},${y}`;
+            if (!(key in pointMap)) {
+                pointMap[key] = idx++;
+                points.push({x, y});
+            }
+        });
+        wallData.forEach(seg => {
+            const a = pointMap[`${seg[0][0]},${seg[0][1]}`];
+            const b = pointMap[`${seg[1][0]},${seg[1][1]}`];
+            walls.push([a, b]);
+        });
+
+        // Denormalize for editor: shift +50 so [−50,50] → [0,100]
+        wallData.forEach(seg => {
+            seg[0][0] += 50;
+            seg[0][1] += 50;
+            seg[1][0] += 50;
+            seg[1][1] += 50;
+        });
+
         const GRID_SIZE = 40; // grid size in pixels
 
         function snap(val) {
@@ -26,26 +57,40 @@
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const points = [];
-        const walls = [];
         let selected = null;
 
+        let zoom = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isPanning = false;
+        let panStart = {x: 0, y: 0};
+        let offsetStart = {x: 0, y: 0};
+
         function draw() {
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // reset
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.setTransform(zoom, 0, 0, zoom, offsetX, offsetY);
 
             // Draw grid
             ctx.strokeStyle = "#444";
             ctx.lineWidth = 1;
-            for (let gx = 0; gx < canvas.width; gx += GRID_SIZE) {
+            const left = (-offsetX) / zoom;
+            const top = (-offsetY) / zoom;
+            const right = (canvas.width - offsetX) / zoom;
+            const bottom = (canvas.height - offsetY) / zoom;
+
+            // Vertical lines
+            for (let gx = Math.floor(left / GRID_SIZE) * GRID_SIZE; gx < right; gx += GRID_SIZE) {
                 ctx.beginPath();
-                ctx.moveTo(gx, 0);
-                ctx.lineTo(gx, canvas.height);
+                ctx.moveTo(gx, top);
+                ctx.lineTo(gx, bottom);
                 ctx.stroke();
             }
-            for (let gy = 0; gy < canvas.height; gy += GRID_SIZE) {
+            // Horizontal lines
+            for (let gy = Math.floor(top / GRID_SIZE) * GRID_SIZE; gy < bottom; gy += GRID_SIZE) {
                 ctx.beginPath();
-                ctx.moveTo(0, gy);
-                ctx.lineTo(canvas.width, gy);
+                ctx.moveTo(left, gy);
+                ctx.lineTo(right, gy);
                 ctx.stroke();
             }
 
@@ -67,12 +112,22 @@
                 ctx.strokeStyle = "#000";
                 ctx.stroke();
             }
+
+            // Mark (0,0) in Babylon.js space, which is (50,50) in editor space
+            ctx.save();
+            ctx.setTransform(zoom, 0, 0, zoom, offsetX, offsetY);
+            ctx.beginPath();
+            // Draw at the logical center of the map (50,50 in map coordinates)
+            ctx.arc(50, 50, 10, 0, Math.PI * 2);
+            ctx.fillStyle = "red";
+            ctx.fill();
+            ctx.restore();
         }
 
         canvas.addEventListener('click', e => {
             const rect = canvas.getBoundingClientRect();
-            const x = snap(e.clientX - rect.left);
-            const y = snap(e.clientY - rect.top);
+            const x = snap(((e.offsetX - offsetX) / zoom));
+            const y = snap(((e.offsetY - offsetY) / zoom));
             // Check if clicked near a point
             let idx = points.findIndex(p => Math.hypot(p.x - x, p.y - y) < 12);
             if (idx === -1) {
@@ -96,8 +151,8 @@
         document.getElementById('export').onclick = () => {
             // Export as flat array of wall segments (each as two points)
             const wallData = walls.map(([a, b]) => [
-                [points[a].x, points[a].y],
-                [points[b].x, points[b].y]
+                [points[a].x - 50, points[a].y - 50],
+                [points[b].x - 50, points[b].y - 50]
             ]);
             // Output as a nicely formatted JS variable for direct copy-paste
             document.getElementById('output').textContent =
@@ -112,6 +167,72 @@
             const output = document.getElementById('output');
             navigator.clipboard.writeText(output.textContent);
         };
+
+        document.getElementById('delete').onclick = () => {
+            if (selected !== null) {
+                // Remove all walls connected to the selected point
+                for (let i = walls.length - 1; i >= 0; i--) {
+                    const [a, b] = walls[i];
+                    if (a === selected || b === selected) {
+                        walls.splice(i, 1);
+                    }
+                }
+                // Remove the selected point
+                points.splice(selected, 1);
+                // Update wall indices
+                for (let i = 0; i < walls.length; i++) {
+                    if (walls[i][0] > selected) walls[i][0]--;
+                    if (walls[i][1] > selected) walls[i][1]--;
+                }
+                selected = null;
+                draw();
+            }
+        };
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const scale = e.deltaY < 0 ? 1.1 : 0.9;
+            // Zoom around mouse position
+            const mx = (e.offsetX - offsetX) / zoom;
+            const my = (e.offsetY - offsetY) / zoom;
+            zoom *= scale;
+            offsetX = e.offsetX - mx * zoom;
+            offsetY = e.offsetY - my * zoom;
+            draw();
+        }, { passive: false });
+
+        canvas.addEventListener('mousedown', e => {
+            if (e.button === 1 || (e.button === 0 && e.ctrlKey)) { // middle mouse or ctrl+left
+                isPanning = true;
+                panStart = {x: e.clientX, y: e.clientY};
+                offsetStart = {x: offsetX, y: offsetY};
+            }
+        });
+        window.addEventListener('mousemove', e => {
+            if (isPanning) {
+                offsetX = offsetStart.x + (e.clientX - panStart.x);
+                offsetY = offsetStart.y + (e.clientY - panStart.y);
+                draw();
+            }
+        });
+        window.addEventListener('mouseup', e => {
+            isPanning = false;
+        });
+
+        // Center the logical (50,50) in the canvas initially
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const p of points) {
+            if (p.x < minX) minX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y > maxY) maxY = p.y;
+        }
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        // Center the view on the map's center
+        offsetX = canvas.width / 2 - centerX * zoom;
+        offsetY = canvas.height / 2 - centerY * zoom;
 
         draw();
     </script>

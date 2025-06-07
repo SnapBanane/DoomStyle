@@ -6,10 +6,17 @@
  * @returns {BABYLON.Mesh[
  * ]} Array of wall meshes.
  */
-export function buildWallsFromArray(scene, wallData, options = {}) {
+ function buildWallsFromArray(scene, wallData, options = {}) {
     const height = options.height || 4;
     const thickness = options.thickness || 0.5;
     const y = options.y || height / 2;
+
+    const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
+    wallMat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6); // light gray
+    wallMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+    wallMat.emissiveColor = new BABYLON.Color3(0, 0, 0);
+    wallMat.alpha = 1; // fully opaque
+    wallMat.backFaceCulling = false; // render both sides
 
     const walls = [];
     for (const [[x1, z1], [x2, z2]] of wallData) {
@@ -33,8 +40,19 @@ export function buildWallsFromArray(scene, wallData, options = {}) {
 
         wall.position = new BABYLON.Vector3(cx, y, cz);
         wall.rotation = new BABYLON.Vector3(0, -angle, 0);
+        wall.material = wallMat;
 
         walls.push(wall);
     }
     return walls;
 }
+
+function getWallData() {
+    return [
+        [[-10, 510], [-10, -10]],
+        [[-10, -10], [710, -10]],
+        [[-10, 270], [350, 270]]
+    ];
+}
+
+export { buildWallsFromArray, getWallData };

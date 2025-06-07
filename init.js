@@ -63,6 +63,7 @@ export async function startGame() {
     setupPlayerControls(scene, player, camera);
 
     camera.minZ = 0.01;
+    camera.maxZ = 10000;
 
     // Init Health Engine
     player.health = 100;

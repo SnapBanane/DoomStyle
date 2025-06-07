@@ -1,5 +1,5 @@
 import { initShadowEngine } from "./shadow-engine.js";
-import { buildWallsFromArray } from "./mapConstructor.js";
+import { buildWallsFromArray, getWallData } from "./mapConstructor.js";
 
 export const createScene = (engine, canvas) => {
     const scene = new BABYLON.Scene(engine); // empty scene
@@ -9,11 +9,7 @@ export const createScene = (engine, canvas) => {
 
     const ground = buildGround(scene);
 
-    const wallDataRaw = [
-        [[40, 560], [40, 40]],
-        [[40, 40], [760, 40]]
-    ];
-
+    const wallDataRaw = getWallData();
     // Find bounds (min/max) for normalization
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     wallDataRaw.forEach(seg => {
@@ -28,10 +24,10 @@ export const createScene = (engine, canvas) => {
     const rangeX = maxX - minX;
     const rangeY = maxY - minY;
 
-    // Normalize to 100x100, avoid division by zero
+    // Normalize to 100x100, avoid division by zero & shift by 50% to make the center (0,0)
     const norm = v => [
-        rangeX === 0 ? 50 : ((v[0] - minX) / rangeX) * 100,
-        rangeY === 0 ? 50 : ((v[1] - minY) / rangeY) * 100
+        rangeX === 0 ? 50 : ((v[0] - minX) / rangeX) * 100 - 50,
+        rangeY === 0 ? 50 : ((v[1] - minY) / rangeY) * 100 - 50
     ];
     const wallData = wallDataRaw.map(seg => [norm(seg[0]), norm(seg[1])]);
 
