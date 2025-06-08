@@ -1,5 +1,5 @@
 import { initShadowEngine } from "./shadow-engine.js";
-import { buildWallsFromArray, fetchWallData } from "./mapConstructor.js";
+import { buildMultiLayerMap, fetchWallData } from "./mapConstructor.js"; // <-- import buildMultiLayerMap
 
 export const createScene = async (engine, canvas) => {
     const scene = new BABYLON.Scene(engine); // empty scene
@@ -9,87 +9,41 @@ export const createScene = async (engine, canvas) => {
 
     const ground = buildGround(scene);
 
-    // Fetch wall data from server
-    const wallDataRaw = await fetchWallData();
+    // Fetch map data (multi-layer)
+    const mapData = await fetchWallData();
 
-    // Find bounds (min/max) for normalization
+    // Find bounds for all points in all layers
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    wallDataRaw.forEach(seg => {
-        seg.forEach(([x, y]) => {
-            if (x < minX) minX = x;
-            if (y < minY) minY = y;
-            if (x > maxX) maxX = x;
-            if (y > maxY) maxY = y;
+    if (mapData.layers) {
+        mapData.layers.forEach(layer => {
+            layer.points.forEach(([x, y]) => {
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            });
         });
-    });
+    }
 
     const rangeX = maxX - minX;
     const rangeY = maxY - minY;
-
-    // Normalize to 100x100, avoid division by zero & shift by 50% to make the center (0,0)
     const normScale = 20;
 
-    const norm = v => [
-        rangeX === 0 ? 50 : ((v[0] - minX) / rangeX) * normScale - normScale / 2,
-        rangeY === 0 ? 50 : ((v[1] - minY) / rangeY) * normScale - normScale / 2
-    ];
-    const wallData = wallDataRaw.map(seg => [norm(seg[0]), norm(seg[1])]);
-
-    const walls = buildWallsFromArray(scene, wallData, { height: 4, thickness: 0.5 });
-    /*
-    //create a slope
-    const slope = BABYLON.MeshBuilder.CreateCylinder("slope", {diameter: 3, height: 1.2, tessellation: 3});
-    slope.position = new BABYLON.Vector3(-10, 0, 0);
-    slope.scaling.x = 0.5;
-    slope.rotation.z = Math.PI / 2;
-    slope.rotation.y = Math.PI / 2;
-
-    //initial instance of house
-    const detached_house = buildHouse(1);
-    detached_house.rotation.y = -Math.PI / 16;
-    detached_house.position.x = -6.8;
-    detached_house.position.z = 2.5;
-
-    //initial instance of second building
-    const semi_house = buildHouse(2);
-    semi_house.rotation.y = -Math.PI / 16;
-    semi_house.position.x = -4.5;
-    semi_house.position.z = 3;
-
-    const places = []; //each entry is an array [house type, rotation, x, z]
-    places.push([2, -Math.PI / 16, -1.5, 4 ]);
-    places.push([2, -Math.PI / 3, 1.5, 6 ]);
-    places.push([2, 15 * Math.PI / 16, -6.4, -1.5 ]);
-    places.push([1, 15 * Math.PI / 16, -4.1, -1 ]);
-    places.push([2, 15 * Math.PI / 16, -2.1, -0.5 ]);
-    places.push([1, 5 * Math.PI / 4, 0, -1 ]);
-    places.push([1, Math.PI + Math.PI / 2.5, 0.5, -3 ]);
-    places.push([2, Math.PI + Math.PI / 2.1, 0.75, -5 ]);
-    places.push([1, Math.PI + Math.PI / 2.25, 0.75, -7 ]);
-    places.push([2, Math.PI / 1.9, 4.75, -1 ]);
-    places.push([1, Math.PI / 1.95, 4.5, -3 ]);
-    places.push([2, Math.PI / 1.9, 4.75, -5 ]);
-    places.push([1, Math.PI / 1.9, 4.75, -7 ]);
-    places.push([2, -Math.PI / 3, 5.25, 2 ]);
-    places.push([1, -Math.PI / 3, 6, 4 ]);
-
-    const houses = [];
-    for (let i = 0; i < places.length; i++) {
-        if (places[i][0] === 1) {
-            houses[i] = detached_house.createInstance("house" + i);
-        }
-        else {
-            houses[i] = semi_house.createInstance("house" + i);
-        }
-        houses[i].rotation.y = places[i][1];
-        houses[i].position.x = places[i][2];
-        houses[i].position.z = places[i][3];
+    // Normalize all points in all layers
+    if (mapData.layers) {
+        mapData.layers.forEach(layer => {
+            layer.points = layer.points.map(v => [
+                rangeX === 0 ? 50 : ((v[0] - minX) / rangeX) * normScale - normScale / 2,
+                rangeY === 0 ? 50 : ((v[1] - minY) / rangeY) * normScale - normScale / 2
+            ]);
+        });
     }
-        */
+
+    // Build all layers and ramps
+    buildMultiLayerMap(scene, mapData, { layerHeight: 2, wallHeight: 2, wallThickness: 0.5 });
 
     // shadow stuff
     ground.receiveShadows = true;
-    // const objects = [detached_house, semi_house, ...houses];
     const objects = [];
     initShadowEngine(scene, light, objects);
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>2D Map Editor</title>
+  <title>2D Map Editor - Multi Layer</title>
   <style>
     html, body { margin: 0; overflow: hidden; height: 100%; }
     body { position: relative; height: 100vh; }
@@ -15,330 +15,581 @@
       background: rgba(30,30,30,0.9);
       padding: 10px;
       border-radius: 8px;
+      color: #fff;
+      font-family: sans-serif;
+    }
+    #layerList {
+      margin: 8px 0;
+      max-height: 120px;
+      overflow-y: auto;
+      background: #222;
+      border-radius: 4px;
+      padding: 4px;
+    }
+    .layer-item {
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .layer-item.selected {
+      background: #444;
+      font-weight: bold;
+    }
+    .ramp-btn {
+      margin-top: 6px;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+    .ramp-btn.active {
+      background: #0af;
+      color: #fff;
+    }
+    .color-input {
+      width: 32px;
+      height: 18px;
+      border: none;
+      margin-left: 4px;
+      vertical-align: middle;
     }
   </style>
 </head>
 <body>
   <canvas id="editor"></canvas>
   <div id="controls">
-    <button id="saveBtn">Save Wall Data</button><br>
+    <div>
+      <button id="addLayerBtn">Add Layer</button>
+      <button id="removeLayerBtn">Remove Layer</button>
+    </div>
+    <div id="layerList"></div>
+    <div>
+      <label>Floor color: <input type="color" id="floorColor" class="color-input"></label>
+    </div>
+    <button id="rampModeBtn" class="ramp-btn">Ramp Tool</button>
+    <button id="saveBtn">Save Map</button>
   </div>
   <script type="module">
-    import { fetchWallData, saveWallData } from './mapConstructor.js';
+import { fetchWallData, saveWallData } from './mapConstructor.js';
 
-    let wallData = await fetchWallData(); // Load from server
+// --- Data Structures ---
+let layers = [];
+let ramps = []; // {from: {layer, point}, to: {layer, point}}
+let currentLayer = 0;
+let rampMode = false;
+let rampStart = null;
 
-    const canvas = document.getElementById("editor");
-    const ctx = canvas.getContext("2d");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+// Each layer: { points: [[x,y],...], walls: [[a,b],...], color: "#hex" }
+function createLayer(color = "#222222") {
+  return { points: [], walls: [], color };
+}
 
-    let scale = 1;
-    let offsetX = canvas.width / 2;
-    let offsetY = canvas.height / 2;
-    let draggingCanvas = false;
-    let dragStart = null;
-    let draggingPoint = null;
-    const gridSize = 40;
+// --- Load initial data (single layer for backward compatibility) ---
+let wallData = await fetchWallData();
+if (wallData && wallData.length && !wallData.layers) {
+  // Assume single layer import
+  let points = [];
+  let pointMap = {};
+  let idx = 0;
+  wallData.flat().forEach(([x, y]) => {
+    const key = `${x},${y}`;
+    if (!(key in pointMap)) {
+      pointMap[key] = idx++;
+      points.push([x, y]);
+    }
+  });
+  let walls = wallData.map(seg => [
+    pointMap[`${seg[0][0]},${seg[0][1]}`],
+    pointMap[`${seg[1][0]},${seg[1][1]}`]
+  ]);
+  layers = [ { points, walls, color: "#222222" } ];
+  ramps = [];
+} else if (wallData && wallData.layers) {
+  // Multi-layer format
+  layers = wallData.layers.map(l => ({
+    points: l.points,
+    walls: l.walls,
+    color: l.color || "#222222"
+  }));
+  ramps = wallData.ramps || [];
+} else {
+  layers = [ createLayer() ];
+  ramps = [];
+}
 
-    let points = [];
-    let walls = [];
-    let selectedPoint = null;
+// --- Canvas and Drawing ---
+const canvas = document.getElementById("editor");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-    let undoStack = [];
+let scale = 1;
+let offsetX = canvas.width / 2;
+let offsetY = canvas.height / 2;
+let draggingCanvas = false;
+let dragStart = null;
+let draggingPoint = null;
+const gridSize = 40;
+let selectedPoint = null;
+let undoStack = [];
 
-    // --- Import map from mapConstructor.js ---
-    const pointMap = {};
-    let idx = 0;
-    const SHIFT_X = -10 * gridSize;
-    const SHIFT_Y = -8 * gridSize;
+// --- Polygon Helper: Get boundary from walls or convex hull if not possible ---
+function getPolygonFromWalls(points, walls) {
+  if (points.length < 3) return null;
+  if (walls.length < 3) {
+    // Not enough walls, fallback to convex hull
+    return convexHull(points);
+  }
+  // Build adjacency list
+  const adj = {};
+  for (const [a, b] of walls) {
+    if (!adj[a]) adj[a] = [];
+    if (!adj[b]) adj[b] = [];
+    adj[a].push(b);
+    adj[b].push(a);
+  }
+  // Find a start point with degree 2 (should be all if closed)
+  let start = walls[0][0];
+  // Walk the polygon
+  const poly = [start];
+  let prev = null, curr = start;
+  while (true) {
+    const nexts = adj[curr].filter(n => n !== prev);
+    if (nexts.length === 0) break;
+    const next = nexts[0];
+    if (next === start) break; // closed
+    poly.push(next);
+    prev = curr;
+    curr = next;
+    if (poly.length > points.length + 2) break; // fail-safe
+  }
+  // Only return if closed
+  if (poly.length >= 3 && adj[poly[poly.length-1]].includes(start)) {
+    return poly.map(i => points[i]);
+  }
+  // Fallback to convex hull
+  return convexHull(points);
+}
 
-    // Store points as-is (no shift)
-    wallData.flat().forEach(([x, y]) => {
-      const key = `${x},${y}`;
-      if (!(key in pointMap)) {
-        pointMap[key] = idx++;
-        points.push([x, y]);
-      }
-    });
-    walls = wallData.map(seg => [
-      pointMap[`${seg[0][0]},${seg[0][1]}`],
-      pointMap[`${seg[1][0]},${seg[1][1]}`]
-    ]);
+// --- Convex Hull (Graham scan, returns array of points) ---
+function convexHull(points) {
+  // Sort by x, then y
+  points = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const n = points.length;
+  if (n < 3) return null;
+  const lower = [];
+  for (let p of points) {
+    while (lower.length >= 2 && cross(lower[lower.length-2], lower[lower.length-1], p) <= 0)
+      lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const p = points[i];
+    while (upper.length >= 2 && cross(upper[upper.length-2], upper[upper.length-1], p) <= 0)
+      upper.pop();
+    upper.push(p);
+  }
+  upper.pop();
+  lower.pop();
+  return lower.concat(upper);
+}
+function cross(a, b, o) {
+  return (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
+}
 
-    function drawGrid() {
+// --- Drawing ---
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+  drawOrigin();
+
+  // Draw all layers' floors (as colored polygons, if closed)
+  for (let l = 0; l < layers.length; l++) {
+    const layer = layers[l];
+    const poly = getPolygonFromWalls(layer.points, layer.walls);
+    if (poly) {
       ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = l === currentLayer ? 0.18 : 0.08;
+      ctx.fillStyle = layer.color;
 
-      // Get visible world bounds
-      const left = screenToWorld(0, 0)[0];
-      const top = screenToWorld(0, 0)[1];
-      const right = screenToWorld(canvas.width, 0)[0];
-      const bottom = screenToWorld(0, canvas.height)[1];
+      // Draw main floor
+      ctx.beginPath();
+      for (let i = 0; i < poly.length; i++) {
+        const [x, y] = worldToScreen(poly[i][0], poly[i][1]);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
 
-      ctx.strokeStyle = "#333";
-      ctx.lineWidth = 1;
-
-      // Vertical grid lines
-      let startX = Math.floor(left / gridSize) * gridSize;
-      let endX = Math.ceil(right / gridSize) * gridSize;
-      for (let x = startX; x <= endX; x += gridSize) {
-        const [sx1, sy1] = worldToScreen(x, top);
-        const [sx2, sy2] = worldToScreen(x, bottom);
-        ctx.beginPath();
-        ctx.moveTo(sx1, sy1);
-        ctx.lineTo(sx2, sy2);
-        ctx.stroke();
+      // Draw holes for ramps (if not bottom layer)
+      if (l > 0) {
+        for (const ramp of ramps) {
+          if (ramp.to.layer === l) {
+            const pt = layers[l].points[ramp.to.point];
+            const [cx, cy] = worldToScreen(pt[0], pt[1]);
+            ctx.moveTo(cx + 20, cy);
+            ctx.arc(cx, cy, 20, 0, Math.PI * 2, true);
+          }
+        }
       }
 
-      // Horizontal grid lines
-      let startY = Math.floor(top / gridSize) * gridSize;
-      let endY = Math.ceil(bottom / gridSize) * gridSize;
-      for (let y = startY; y <= endY; y += gridSize) {
-        const [sx1, sy1] = worldToScreen(left, y);
-        const [sx2, sy2] = worldToScreen(right, y);
-        ctx.beginPath();
-        ctx.moveTo(sx1, sy1);
-        ctx.lineTo(sx2, sy2);
-        ctx.stroke();
-      }
-
+      ctx.fill("evenodd");
       ctx.restore();
     }
+  }
 
-    function drawOrigin() {
-      const [x, y] = worldToScreen(0, 0);
-      ctx.fillStyle = "yellow";
+  // Draw ramps (between layers)
+  for (const ramp of ramps) {
+    const fromLayer = layers[ramp.from.layer];
+    const toLayer = layers[ramp.to.layer];
+    if (!fromLayer || !toLayer) continue;
+    const [fx, fy] = worldToScreen(
+      fromLayer.points[ramp.from.point][0],
+      fromLayer.points[ramp.from.point][1]
+    );
+    const [tx, ty] = worldToScreen(
+      toLayer.points[ramp.to.point][0],
+      toLayer.points[ramp.to.point][1]
+    );
+    ctx.save();
+    ctx.strokeStyle = "#0af";
+    ctx.setLineDash([8, 8]);
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(fx, fy);
+    ctx.lineTo(tx, ty);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Draw walls and points for all layers (dim others)
+  for (let l = 0; l < layers.length; l++) {
+    const layer = layers[l];
+    ctx.save();
+    ctx.globalAlpha = l === currentLayer ? 1 : 0.3;
+    // Walls
+    ctx.strokeStyle = l === currentLayer ? "#f00" : "#888";
+    ctx.lineWidth = 2;
+    for (const [aIdx, bIdx] of layer.walls) {
+      const [ax, ay] = worldToScreen(layer.points[aIdx][0], layer.points[aIdx][1]);
+      const [bx, by] = worldToScreen(layer.points[bIdx][0], layer.points[bIdx][1]);
       ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
+      ctx.stroke();
+    }
+    // Points
+    for (let i = 0; i < layer.points.length; i++) {
+      const [x, y] = worldToScreen(layer.points[i][0], layer.points[i][1]);
+      // Highlight ramp selection
+      let highlight = false;
+      if (rampMode && rampStart && l === rampStart.layer && i === rampStart.point) highlight = true;
+      ctx.fillStyle = highlight ? "#0af" : (l === currentLayer && i === selectedPoint ? "#0f0" : "#fff");
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.restore();
+  }
+}
 
-    // Shift all drawing by -10 squares left and 8 squares up
-    const DRAW_SHIFT_X = -10 * gridSize;
-    const DRAW_SHIFT_Y = -8 * gridSize;
+function worldToScreen(x, y) {
+  return [
+    x * scale + offsetX,
+    y * scale + offsetY
+  ];
+}
+function screenToWorld(x, y) {
+  return [(x - offsetX) / scale, (y - offsetY) / scale];
+}
+function snap(x, y) {
+  return [
+    Math.round(x / gridSize) * gridSize,
+    Math.round(y / gridSize) * gridSize,
+  ];
+}
 
-    function worldToScreen(x, y) {
-      return [
-        x * scale + offsetX,
-        y * scale + offsetY
-      ];
-    }
+function drawGrid() {
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const left = screenToWorld(0, 0)[0];
+  const top = screenToWorld(0, 0)[1];
+  const right = screenToWorld(canvas.width, 0)[0];
+  const bottom = screenToWorld(0, canvas.height)[1];
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1;
+  let startX = Math.floor(left / gridSize) * gridSize;
+  let endX = Math.ceil(right / gridSize) * gridSize;
+  for (let x = startX; x <= endX; x += gridSize) {
+    const [sx1, sy1] = worldToScreen(x, top);
+    const [sx2, sy2] = worldToScreen(x, bottom);
+    ctx.beginPath();
+    ctx.moveTo(sx1, sy1);
+    ctx.lineTo(sx2, sy2);
+    ctx.stroke();
+  }
+  let startY = Math.floor(top / gridSize) * gridSize;
+  let endY = Math.ceil(bottom / gridSize) * gridSize;
+  for (let y = startY; y <= endY; y += gridSize) {
+    const [sx1, sy1] = worldToScreen(left, y);
+    const [sx2, sy2] = worldToScreen(right, y);
+    ctx.beginPath();
+    ctx.moveTo(sx1, sy1);
+    ctx.lineTo(sx2, sy2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 
-    function screenToWorld(x, y) {
-      return [(x - offsetX) / scale, (y - offsetY) / scale];
-    }
+function drawOrigin() {
+  const [x, y] = worldToScreen(0, 0);
+  ctx.fillStyle = "yellow";
+  ctx.beginPath();
+  ctx.arc(x, y, 5, 0, Math.PI * 2);
+  ctx.fill();
+}
 
-    function snap(x, y) {
-      return [
-        Math.round(x / gridSize) * gridSize,
-        Math.round(y / gridSize) * gridSize,
-      ];
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawGrid();
-      drawOrigin();
-
-      // Shift for drawing walls/points only
-      const SHIFT_X = -10 * gridSize;
-      const SHIFT_Y = -8 * gridSize;
-
-      // Draw walls
-      ctx.strokeStyle = "#f00";
-      ctx.lineWidth = 2;
-      for (const [aIdx, bIdx] of walls) {
-        const [ax, ay] = worldToScreen(points[aIdx][0], points[aIdx][1]);
-        const [bx, by] = worldToScreen(points[bIdx][0], points[bIdx][1]);
-        ctx.beginPath();
-        ctx.moveTo(ax, ay);
-        ctx.lineTo(bx, by);
-        ctx.stroke();
-      }
-
-      // Draw points
-      for (let i = 0; i < points.length; i++) {
-        const [x, y] = worldToScreen(points[i][0], points[i][1]);
-        ctx.fillStyle = i === selectedPoint ? "#0f0" : "#fff";
-        ctx.beginPath();
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Call this before any change to points or walls
-    function pushUndo() {
-      undoStack.push({
-        points: JSON.parse(JSON.stringify(points)),
-        walls: JSON.parse(JSON.stringify(walls))
-      });
-      // Optional: Limit stack size
-      if (undoStack.length > 100) undoStack.shift();
-    }
-
-    // Undo function
-    function undo() {
-      if (undoStack.length > 0) {
-        const last = undoStack.pop();
-        points = last.points;
-        walls = last.walls;
-        draw();
-      }
-    }
-
-    // Listen for Ctrl+Z or Cmd+Z
-    window.addEventListener('keydown', e => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        undo();
-      }
-    });
-
-    canvas.addEventListener("mousedown", e => {
-      if (e.button === 1) {
-        draggingCanvas = true;
-        dragStart = [e.clientX - offsetX, e.clientY - offsetY];
-        return; // Prevent point creation!
-      }
-
-      const [wx, wy] = screenToWorld(e.clientX, e.clientY);
-      const [sx, sy] = snap(wx, wy);
-
-      if (e.button === 2) {
-        // Right click to delete point or wall
-        for (let i = 0; i < points.length; i++) {
-          const [x, y] = points[i];
-          if (Math.hypot(x - wx, y - wy) < 10) {
-            walls = walls.filter(([a, b]) => a !== i && b !== i).map(([a, b]) => [a > i ? a - 1 : a, b > i ? b - 1 : b]);
-            points.splice(i, 1);
-            if (selectedPoint === i) selectedPoint = null;
-            draw();
-            return;
-          }
-        }
-        draw();
-        return;
-      }
-
-      // Check for existing point
-      for (let i = 0; i < points.length; i++) {
-        const [x, y] = points[i];
-        if (Math.hypot(x - wx, y - wy) < 10) {
-          if (selectedPoint === null) {
-            selectedPoint = i;
-          } else if (selectedPoint !== i) {
-            walls.push([selectedPoint, i]);
-            selectedPoint = null;
-          } else {
-            draggingPoint = i;
-          }
-          draw();
-          return;
-        }
-      }
-
-      points.push([sx, sy]);
-      draw();
-    });
-
-    canvas.addEventListener("mousemove", e => {
-      if (draggingCanvas && dragStart) {
-        offsetX = e.clientX - dragStart[0];
-        offsetY = e.clientY - dragStart[1];
-        draw();
-      }
-      if (draggingPoint !== null) {
-        let [wx, wy] = screenToWorld(e.clientX, e.clientY);
-        points[draggingPoint] = snap(wx, wy);
-        draw();
-      }
-    });
-
-    canvas.addEventListener("mouseup", () => {
-      draggingCanvas = false;
-      draggingPoint = null;
-    });
-
-    canvas.addEventListener("wheel", e => {
-      const zoom = e.deltaY < 0 ? 1.1 : 0.9;
-      const [mx, my] = [e.clientX, e.clientY];
-      const [wx, wy] = screenToWorld(mx, my);
-      scale = Math.min(Math.max(scale * zoom, 0.1), 4); // Limit zoom
-      const [nx, ny] = worldToScreen(wx, wy);
-      offsetX += mx - nx;
-      offsetY += my - ny;
-      draw();
-    });
-
-    canvas.addEventListener("contextmenu", e => e.preventDefault());
-    canvas.addEventListener("mousedown", e => {
-      if (e.button === 1) {
-        draggingCanvas = true;
-        dragStart = [e.clientX - offsetX, e.clientY - offsetY];
-        return; // Prevent point creation!
-      }
-
-      const [wx, wy] = screenToWorld(e.clientX, e.clientY);
-      const [sx, sy] = snap(wx, wy);
-
-      if (e.button === 2) {
-        // Right click to delete point or wall
-        for (let i = 0; i < points.length; i++) {
-          const [x, y] = points[i];
-          if (Math.hypot(x - wx, y - wy) < 10) {
-            walls = walls.filter(([a, b]) => a !== i && b !== i).map(([a, b]) => [a > i ? a - 1 : a, b > i ? b - 1 : b]);
-            points.splice(i, 1);
-            if (selectedPoint === i) selectedPoint = null;
-            draw();
-            return;
-          }
-        }
-        draw();
-        return;
-      }
-
-      // Check for existing point
-      for (let i = 0; i < points.length; i++) {
-        const [x, y] = points[i];
-        if (Math.hypot(x - wx, y - wy) < 10) {
-          if (selectedPoint === null) {
-            selectedPoint = i;
-          } else if (selectedPoint !== i) {
-            walls.push([selectedPoint, i]);
-            selectedPoint = null;
-          } else {
-            draggingPoint = i;
-          }
-          draw();
-          return;
-        }
-      }
-
-      points.push([sx, sy]);
-      draw();
-    });
-
-    window.addEventListener("resize", () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      draw();
-    });
-
-    function getWallDataArray() {
-      return walls.map(([aIdx, bIdx]) => [
-        points[aIdx],
-        points[bIdx]
-      ]);
-    }
-
-    document.getElementById('saveBtn').onclick = async function() {
-      const wallData = getWallDataArray();
-      await saveWallData(wallData);
-      alert('Map saved!');
-    };
-
+// --- Undo ---
+function pushUndo() {
+  undoStack.push({
+    layers: JSON.parse(JSON.stringify(layers)),
+    ramps: JSON.parse(JSON.stringify(ramps)),
+    currentLayer,
+    selectedPoint
+  });
+  if (undoStack.length > 100) undoStack.shift();
+}
+function undo() {
+  if (undoStack.length > 0) {
+    const last = undoStack.pop();
+    layers = last.layers;
+    ramps = last.ramps;
+    currentLayer = last.currentLayer;
+    selectedPoint = last.selectedPoint;
+    updateLayerList();
     draw();
+  }
+}
+window.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+    e.preventDefault();
+    undo();
+  }
+});
+
+// --- Layer Controls ---
+function updateLayerList() {
+  const list = document.getElementById('layerList');
+  list.innerHTML = '';
+  layers.forEach((layer, i) => {
+    const div = document.createElement('div');
+    div.className = 'layer-item' + (i === currentLayer ? ' selected' : '');
+    div.innerHTML = `Layer ${i+1}`;
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = layer.color;
+    colorInput.className = 'color-input';
+    colorInput.oninput = e => {
+      layer.color = e.target.value;
+      if (i === currentLayer) document.getElementById('floorColor').value = layer.color;
+      draw();
+    };
+    div.appendChild(colorInput);
+    div.onclick = () => {
+      currentLayer = i;
+      selectedPoint = null;
+      document.getElementById('floorColor').value = layer.color;
+      updateLayerList();
+      draw();
+    };
+    list.appendChild(div);
+  });
+  document.getElementById('removeLayerBtn').disabled = layers.length <= 1;
+}
+document.getElementById('addLayerBtn').onclick = () => {
+  pushUndo();
+  layers.push(createLayer());
+  currentLayer = layers.length - 1;
+  selectedPoint = null;
+  updateLayerList();
+  draw();
+};
+document.getElementById('removeLayerBtn').onclick = () => {
+  if (layers.length <= 1) return;
+  pushUndo();
+  layers.splice(currentLayer, 1);
+  // Remove ramps connected to this layer
+  ramps = ramps.filter(r => r.from.layer !== currentLayer && r.to.layer !== currentLayer);
+  if (currentLayer >= layers.length) currentLayer = layers.length - 1;
+  selectedPoint = null;
+  updateLayerList();
+  draw();
+};
+
+// Floor color
+document.getElementById('floorColor').oninput = e => {
+  layers[currentLayer].color = e.target.value;
+  updateLayerList();
+  draw();
+};
+
+// --- Ramp Tool ---
+document.getElementById('rampModeBtn').onclick = function() {
+  rampMode = !rampMode;
+  rampStart = null;
+  this.classList.toggle('active', rampMode);
+};
+
+// --- Mouse Events ---
+canvas.addEventListener("mousedown", e => {
+  if (e.button === 1) {
+    draggingCanvas = true;
+    dragStart = [e.clientX - offsetX, e.clientY - offsetY];
+    return;
+  }
+  const [wx, wy] = screenToWorld(e.clientX, e.clientY);
+  const [sx, sy] = snap(wx, wy);
+
+  // Ramp mode: select points on two different layers
+  if (rampMode) {
+    for (let l = 0; l < layers.length; l++) {
+      const layer = layers[l];
+      for (let i = 0; i < layer.points.length; i++) {
+        const [x, y] = layer.points[i];
+        if (Math.hypot(x - wx, y - wy) < 10) {
+          if (!rampStart) {
+            rampStart = { layer: l, point: i };
+            draw();
+            return;
+          } else if (rampStart.layer !== l) {
+            // Only allow ramp from lower to higher layer
+            if (rampStart.layer < l) {
+              pushUndo();
+              ramps.push({ from: rampStart, to: { layer: l, point: i } });
+              rampStart = null;
+              draw();
+              return;
+            } else if (rampStart.layer > l) {
+              pushUndo();
+              ramps.push({ from: { layer: l, point: i }, to: rampStart });
+              rampStart = null;
+              draw();
+              return;
+            }
+          }
+        }
+      }
+    }
+    return;
+  }
+
+  // Right click: delete point or wall
+  if (e.button === 2) {
+    for (let i = 0; i < layers[currentLayer].points.length; i++) {
+      const [x, y] = layers[currentLayer].points[i];
+      if (Math.hypot(x - wx, y - wy) < 10) {
+        pushUndo();
+        layers[currentLayer].walls = layers[currentLayer].walls.filter(([a, b]) => a !== i && b !== i)
+          .map(([a, b]) => [a > i ? a - 1 : a, b > i ? b - 1 : b]);
+        layers[currentLayer].points.splice(i, 1);
+        if (selectedPoint === i) selectedPoint = null;
+        draw();
+        return;
+      }
+    }
+    draw();
+    return;
+  }
+
+  // Check for existing point
+  for (let i = 0; i < layers[currentLayer].points.length; i++) {
+    const [x, y] = layers[currentLayer].points[i];
+    if (Math.hypot(x - wx, y - wy) < 10) {
+      if (selectedPoint === null) {
+        selectedPoint = i;
+      } else if (selectedPoint !== i) {
+        pushUndo();
+        layers[currentLayer].walls.push([selectedPoint, i]);
+        selectedPoint = null;
+      } else {
+        draggingPoint = i;
+      }
+      draw();
+      return;
+    }
+  }
+  // Add new point
+  pushUndo();
+  layers[currentLayer].points.push([sx, sy]);
+  draw();
+});
+
+canvas.addEventListener("mousemove", e => {
+  if (draggingCanvas && dragStart) {
+    offsetX = e.clientX - dragStart[0];
+    offsetY = e.clientY - dragStart[1];
+    draw();
+  }
+  if (draggingPoint !== null) {
+    let [wx, wy] = screenToWorld(e.clientX, e.clientY);
+    layers[currentLayer].points[draggingPoint] = snap(wx, wy);
+    draw();
+  }
+});
+
+canvas.addEventListener("mouseup", () => {
+  draggingCanvas = false;
+  draggingPoint = null;
+});
+
+canvas.addEventListener("wheel", e => {
+  const zoom = e.deltaY < 0 ? 1.1 : 0.9;
+  const [mx, my] = [e.clientX, e.clientY];
+  const [wx, wy] = screenToWorld(mx, my);
+  scale = Math.min(Math.max(scale * zoom, 0.1), 4);
+  const [nx, ny] = worldToScreen(wx, wy);
+  offsetX += mx - nx;
+  offsetY += my - ny;
+  draw();
+});
+
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  draw();
+});
+
+// --- Save/Load ---
+function getMapData() {
+  // Save all layers and ramps
+  return {
+    layers: layers.map(l => ({
+      points: l.points,
+      walls: l.walls,
+      color: l.color
+    })),
+    ramps
+  };
+}
+document.getElementById('saveBtn').onclick = async function() {
+  await saveWallData(getMapData());
+  alert('Map saved!');
+};
+
+// --- Init ---
+updateLayerList();
+document.getElementById('floorColor').value = layers[currentLayer].color;
+draw();
   </script>
 </body>
 </html>

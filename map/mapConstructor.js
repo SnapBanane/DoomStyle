@@ -80,4 +80,81 @@ function exportWallData(wallData) {
     return JSON.stringify(wallData, null, 2);
 }
 
+/**
+ * Converts multi-layer map data to an array of wall segments for Babylon.js.
+ * @param {Object} mapData - The map data object with layers and ramps.
+ * @returns {Array} Array of wall segments: [ [ [x1, y1], [x2, y2] ], ... ]
+ */
+export function extractWallSegments(mapData) {
+    if (!mapData.layers) return [];
+    const allWalls = [];
+    for (const layer of mapData.layers) {
+        for (const [a, b] of layer.walls) {
+            const p1 = layer.points[a];
+            const p2 = layer.points[b];
+            allWalls.push([p1, p2]);
+        }
+    }
+    return allWalls;
+}
+
+/**
+ * Builds all layers' walls and (optionally) ramps in Babylon.js.
+ * @param {BABYLON.Scene} scene
+ * @param {Object} mapData - The map data object.
+ * @param {Object} [options] - {layerHeight, wallHeight, wallThickness}
+ * @returns {BABYLON.Mesh[]} Array of all wall meshes.
+ */
+export function buildMultiLayerMap(scene, mapData, options = {}) {
+    const layerHeight = options.layerHeight || 6;
+    const wallHeight = options.wallHeight || 4;
+    const wallThickness = options.wallThickness || 0.5;
+    const meshes = [];
+
+    if (!mapData.layers) return meshes;
+
+    // Build walls for each layer, offsetting Y by layer index
+    mapData.layers.forEach((layer, i) => {
+        const y = i * layerHeight + wallHeight / 2;
+        const wallSegs = [];
+        for (const [a, b] of layer.walls) {
+            const p1 = layer.points[a];
+            const p2 = layer.points[b];
+            // Babylon uses X,Z for horizontal plane, so treat y as z
+            wallSegs.push([[p1[0], p1[1]], [p2[0], p2[1]]]);
+        }
+        const layerWalls = buildWallsFromArray(scene, wallSegs, { height: wallHeight, thickness: wallThickness, y });
+        meshes.push(...layerWalls);
+    });
+
+    // Optionally: visualize ramps as thin boxes or lines
+    if (mapData.ramps) {
+        for (const ramp of mapData.ramps) {
+            const fromL = mapData.layers[ramp.from.layer];
+            const toL = mapData.layers[ramp.to.layer];
+            if (!fromL || !toL) continue;
+            const p1 = fromL.points[ramp.from.point];
+            const p2 = toL.points[ramp.to.point];
+            const y1 = ramp.from.layer * layerHeight + wallHeight / 2;
+            const y2 = ramp.to.layer * layerHeight + wallHeight / 2;
+            // Draw a thin box or cylinder between (p1, y1) and (p2, y2)
+            const rampMesh = BABYLON.MeshBuilder.CreateTube("ramp", {
+                path: [
+                    new BABYLON.Vector3(p1[0], y1, p1[1]),
+                    new BABYLON.Vector3(p2[0], y2, p2[1])
+                ],
+                radius: 0.2,
+                sideOrientation: BABYLON.Mesh.DOUBLESIDE
+            }, scene);
+            const mat = new BABYLON.StandardMaterial("rampMat", scene);
+            mat.diffuseColor = new BABYLON.Color3(0, 0.7, 1);
+            mat.emissiveColor = new BABYLON.Color3(0, 0.3, 1);
+            rampMesh.material = mat;
+            meshes.push(rampMesh);
+        }
+    }
+
+    return meshes;
+}
+
 export { buildWallsFromArray, exportWallData };
