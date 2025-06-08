@@ -6,7 +6,7 @@
  * @returns {BABYLON.Mesh[
  * ]} Array of wall meshes.
  */
- function buildWallsFromArray(scene, wallData, options = {}) {
+function buildWallsFromArray(scene, wallData, options = {}) {
     const height = options.height || 4;
     const thickness = options.thickness || 0.5;
     const y = options.y || height / 2;
@@ -47,12 +47,37 @@
     return walls;
 }
 
-function getWallData() {
-    return [
-        [[-10, 510], [-10, -10]],
-        [[-10, -10], [710, -10]],
-        [[-10, 270], [350, 270]]
-    ];
+/**
+ * Fetch wall data from the server.
+ * @returns {Promise<Array>} - Resolves to wall data array.
+ */
+export async function fetchWallData() {
+    const res = await fetch('/map/wallData');
+    if (!res.ok) throw new Error('Failed to fetch wall data');
+    return await res.json();
 }
 
-export { buildWallsFromArray, getWallData };
+/**
+ * Save wall data to the server.
+ * @param {Array} wallData - The wall data array.
+ * @returns {Promise<void>}
+ */
+export async function saveWallData(wallData) {
+    const res = await fetch('/map/wallData', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(wallData)
+    });
+    if (!res.ok) throw new Error('Failed to save wall data');
+}
+
+/**
+ * Exports wall data as a JSON string.
+ * @param {Array} wallData - The wall data array.
+ * @returns {string} - JSON string of the wall data.
+ */
+function exportWallData(wallData) {
+    return JSON.stringify(wallData, null, 2);
+}
+
+export { buildWallsFromArray, exportWallData };

@@ -1,7 +1,7 @@
 import { initShadowEngine } from "./shadow-engine.js";
-import { buildWallsFromArray, getWallData } from "./mapConstructor.js";
+import { buildWallsFromArray, fetchWallData } from "./mapConstructor.js";
 
-export const createScene = (engine, canvas) => {
+export const createScene = async (engine, canvas) => {
     const scene = new BABYLON.Scene(engine); // empty scene
 
     const light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(-1, -1, 0), scene);
@@ -9,7 +9,9 @@ export const createScene = (engine, canvas) => {
 
     const ground = buildGround(scene);
 
-    const wallDataRaw = getWallData();
+    // Fetch wall data from server
+    const wallDataRaw = await fetchWallData();
+
     // Find bounds (min/max) for normalization
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     wallDataRaw.forEach(seg => {
@@ -25,9 +27,11 @@ export const createScene = (engine, canvas) => {
     const rangeY = maxY - minY;
 
     // Normalize to 100x100, avoid division by zero & shift by 50% to make the center (0,0)
+    const normScale = 20;
+
     const norm = v => [
-        rangeX === 0 ? 50 : ((v[0] - minX) / rangeX) * 100 - 50,
-        rangeY === 0 ? 50 : ((v[1] - minY) / rangeY) * 100 - 50
+        rangeX === 0 ? 50 : ((v[0] - minX) / rangeX) * normScale - normScale / 2,
+        rangeY === 0 ? 50 : ((v[1] - minY) / rangeY) * normScale - normScale / 2
     ];
     const wallData = wallDataRaw.map(seg => [norm(seg[0]), norm(seg[1])]);
 
@@ -195,4 +199,9 @@ const buildSkyBox = (scene) => {
 
 
     return skybox;
+}
+
+async function loadMap(scene) {
+    const wallData = await fetchWallData();
+    buildWallsFromArray(scene, wallData);
 }

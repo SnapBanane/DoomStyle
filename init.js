@@ -14,7 +14,7 @@ export async function startGame() {
     const havokInstance = await HavokPhysics();
     const physicsPlugin = new BABYLON.HavokPlugin(true, havokInstance);
 
-    const scene = createScene(engine, canvas);
+    const scene = await createScene(engine, canvas);
 
     // Expose the scene globally for console access
     window.scene = scene;
@@ -57,6 +57,7 @@ export async function startGame() {
     );
 
     const camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 1, 0), scene);
+    camera.rotation = new BABYLON.Vector3(0, Math.PI, 0);
     camera.setTarget(BABYLON.Vector3.Zero());
     camera.attachControl(canvas, false);
 
