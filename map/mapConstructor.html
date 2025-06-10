@@ -245,7 +245,7 @@ function draw() {
     ctx.fill();
     ctx.stroke();
     // Draw arrow
-    drawRampArrow(ctx, 0, 0, ramp.angle - Math.PI / 2);
+    drawRampArrow(ctx, 0, 0, ramp.angle);
     ctx.restore();
   }
 
@@ -268,7 +268,7 @@ function draw() {
     ctx.fill();
     ctx.stroke();
     // Draw arrow for preview
-    drawRampArrow(ctx, 0, 0, rampPreview.angle - Math.PI / 2);
+    drawRampArrow(ctx, 0, 0, rampPreview.angle);
     ctx.restore();
   }
 
@@ -298,18 +298,6 @@ function draw() {
     }
     ctx.restore();
   }
-
-  ramps.forEach(ramp => {
-    if (ramp.layer !== currentLayer) return;
-    const [sx, sy] = worldToScreen(ramp.x, ramp.y);
-    // Draw ramp base (optional)
-    ctx.beginPath();
-    ctx.arc(sx, sy, gridSize * 0.3, 0, 2 * Math.PI);
-    ctx.strokeStyle = "#00f";
-    ctx.stroke();
-    // Draw arrow
-    drawRampArrow(ctx, sx, sy, ramp.angle - Math.PI / 2);
-});
 }
 
 function worldToScreen(x, y) {
@@ -667,7 +655,8 @@ ramps.forEach(ramp => {
     ctx.strokeStyle = "#00f";
     ctx.stroke();
     // Draw arrow
-    drawRampArrow(ctx, sx, sy, ramp.angle - Math.PI / 2);
+    drawRampArrow(ctx, sx, sy, ramp.angle
+    );
 });
   </script>
 </body>
