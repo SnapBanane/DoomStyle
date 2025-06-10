@@ -127,7 +127,7 @@ function setupPlayerControls(scene, player, camera) {
 function isPlayerOnGround(player) {
     const scene = player.getScene();
     const rayLength = 0.8;
-    const footRadius = 0.4; // How far from center to check (adjust as needed)
+    const footRadius = 2; // How far from center to check (adjust as needed)
     const rayOrigin = player.position.clone();
     const directions = [
         BABYLON.Vector3.Down(), // straight down
@@ -140,8 +140,7 @@ function isPlayerOnGround(player) {
     for (const dir of directions) {
         const ray = new BABYLON.Ray(rayOrigin, dir, rayLength);
         const hit = scene.pickWithRay(ray, mesh =>
-            mesh !== player && mesh.isPickable && mesh.name !== "wall"
-        );
+            mesh !== player && mesh.isPickable);
         if (hit.hit && hit.getNormal && hit.getNormal().y > 0.5) {
             // Only count as ground if the surface is not too steep (prevents wall jumps)
             return true;
