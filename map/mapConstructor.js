@@ -153,6 +153,65 @@ function cross(a, b, o) {
     return (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
 }
 
+function createRampMesh(scene, x, y, z, width, height, depth, angle) {
+    // width: along X, depth: along Z, height: vertical
+    // The ramp will slope from y to y+height along the +Z direction
+    const halfW = width / 2;
+    const halfD = depth / 2;
+
+    // 8 vertices of a prism with a sloped top
+    const positions = [
+        // Bottom face
+        -halfW, y, -halfD, // 0: left, bottom, back
+         halfW, y, -halfD, // 1: right, bottom, back
+         halfW, y,  halfD, // 2: right, bottom, front
+        -halfW, y,  halfD, // 3: left, bottom, front
+        // Top face (sloped)
+        -halfW, y + height, -halfD, // 4: left, top, back
+         halfW, y + height, -halfD, // 5: right, top, back
+         halfW, y,  halfD,          // 6: right, low, front (same as bottom)
+        -halfW, y,  halfD           // 7: left, low, front (same as bottom)
+    ];
+
+    // Indices for faces
+    const indices = [
+        // Bottom
+        0, 1, 2, 0, 2, 3,
+        // Back
+        0, 1, 5, 0, 5, 4,
+        // Left
+        0, 4, 7, 0, 7, 3,
+        // Right
+        1, 2, 6, 1, 6, 5,
+        // Slope (front)
+        3, 2, 6, 3, 6, 7,
+        // Top (sloped)
+        4, 5, 6, 4, 6, 7
+    ];
+
+    // Create mesh
+    const mesh = new BABYLON.Mesh("ramp", scene);
+    const vertexData = new BABYLON.VertexData();
+    vertexData.positions = positions;
+    vertexData.indices = indices;
+    vertexData.normals = [];
+    BABYLON.VertexData.ComputeNormals(positions, indices, vertexData.normals);
+    vertexData.applyToMesh(mesh);
+
+    // Position and rotate
+    mesh.position = new BABYLON.Vector3(x, y, z);
+    mesh.rotation = new BABYLON.Vector3(0, -angle, 0);
+
+    // Material
+    const mat = new BABYLON.StandardMaterial("rampMat", scene);
+    mat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+    mat.emissiveColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+    mat.backFaceCulling = false;
+    mesh.material = mat;
+
+    return mesh;
+}
+
 /**
  * Builds all layers' walls and (optionally) ramps in Babylon.js.
  * @param {BABYLON.Scene} scene
@@ -182,26 +241,25 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
         meshes.push(...layerWalls);
     });
 
-    // --- Render ramps as tilted boxes ---
+    // --- Render ramps as real ramps (prisms) ---
     if (mapData.ramps) {
         for (const ramp of mapData.ramps) {
             if (ramp.layer === 0) continue;
-            // Use vertical spacing between layers for ramp height
-            const rampHeight = layerHeight;
+            const rampHeight = layerHeight * 2;
             const y = ramp.layer * layerHeight - rampHeight / 2;
-            const mesh = BABYLON.MeshBuilder.CreateBox("rampBox", {
-                width: gridSize*4,
-                height: rampHeight,
-                depth: gridSize
-            }, scene);
-            mesh.position = new BABYLON.Vector3(ramp.x, y, ramp.y);
-            mesh.rotation = new BABYLON.Vector3(-Math.PI / 4, -ramp.angle, 0);
-            // No extra Y offset needed!
-            const mat = new BABYLON.StandardMaterial("rampMat", scene);
-            mat.diffuseColor = new BABYLON.Color3(0, 0.7, 1);
-            mat.emissiveColor = new BABYLON.Color3(0, 0.3, 1);
-            mat.backFaceCulling = false;
-            mesh.material = mat;
+            // width and depth can be adjusted as needed
+            const width = gridSize * 4;
+            const depth = gridSize * 4;
+            const mesh = createRampMesh(
+                scene,
+                ramp.x,
+                y,
+                ramp.y,
+                width,
+                rampHeight/2,
+                depth,
+                ramp.angle
+            );
             meshes.push(mesh);
         }
     }

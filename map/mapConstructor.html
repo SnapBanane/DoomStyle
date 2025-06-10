@@ -231,7 +231,6 @@ function draw() {
     ctx.save();
     ctx.globalAlpha = 0.8;
     ctx.translate(...worldToScreen(ramp.x, ramp.y));
-    ctx.rotate(ramp.angle);
     ctx.fillStyle = "#0af";
     ctx.strokeStyle = "#fff";
     ctx.lineWidth = 2;
@@ -254,7 +253,6 @@ function draw() {
     ctx.save();
     ctx.globalAlpha = 0.5;
     ctx.translate(...worldToScreen(rampPreview.x, rampPreview.y));
-    ctx.rotate(rampPreview.angle);
     ctx.fillStyle = "#0af";
     ctx.strokeStyle = "#fff";
     ctx.lineWidth = 2;
@@ -401,6 +399,7 @@ window.addEventListener('keydown', e => {
       moved = true;
     }
     if (e.key === "Enter") {
+      console.log('keydown:', e.key, 'rampPreview:', rampPreview);
       pushUndo();
       ramps.push({
         layer: rampPreview.layer,
@@ -632,7 +631,7 @@ draw();
 function drawRampArrow(ctx, x, y, angle, size = gridSize * 0.4) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.rotate(angle);
+  ctx.rotate(angle - Math.PI / 2);
   ctx.beginPath();
   ctx.moveTo(0, 0);
   ctx.lineTo(size, 0);
@@ -655,8 +654,7 @@ ramps.forEach(ramp => {
     ctx.strokeStyle = "#00f";
     ctx.stroke();
     // Draw arrow
-    drawRampArrow(ctx, sx, sy, ramp.angle
-    );
+    drawRampArrow(ctx, sx, sy, ramp.angle);
 });
   </script>
 </body>
