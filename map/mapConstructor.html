@@ -80,10 +80,10 @@ import { fetchWallData, saveWallData } from './mapConstructor.js';
 
 // --- Data Structures ---
 let layers = [];
-let ramps = []; // {from: {layer, point}, to: {layer, point}}
+let ramps = []; // {layer, x, y, angle}
 let currentLayer = 0;
 let rampMode = false;
-let rampStart = null;
+let rampPreview = null;
 
 // Each layer: { points: [[x,y],...], walls: [[a,b],...], color: "#hex" }
 function createLayer(color = "#222222") {
@@ -154,32 +154,27 @@ function getPolygonFromWalls(points, walls) {
     adj[a].push(b);
     adj[b].push(a);
   }
-  // Find a start point with degree 2 (should be all if closed)
   let start = walls[0][0];
-  // Walk the polygon
   const poly = [start];
   let prev = null, curr = start;
   while (true) {
     const nexts = adj[curr].filter(n => n !== prev);
     if (nexts.length === 0) break;
     const next = nexts[0];
-    if (next === start) break; // closed
+    if (next === start) break;
     poly.push(next);
     prev = curr;
     curr = next;
-    if (poly.length > points.length + 2) break; // fail-safe
+    if (poly.length > points.length + 2) break;
   }
-  // Only return if closed
   if (poly.length >= 3 && adj[poly[poly.length-1]].includes(start)) {
     return poly.map(i => points[i]);
   }
-  // Fallback to convex hull
   return convexHull(points);
 }
 
 // --- Convex Hull (Graham scan, returns array of points) ---
 function convexHull(points) {
-  // Sort by x, then y
   points = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const n = points.length;
   if (n < 3) return null;
@@ -218,8 +213,6 @@ function draw() {
       ctx.save();
       ctx.globalAlpha = l === currentLayer ? 0.18 : 0.08;
       ctx.fillStyle = layer.color;
-
-      // Draw main floor
       ctx.beginPath();
       for (let i = 0; i < poly.length; i++) {
         const [x, y] = worldToScreen(poly[i][0], poly[i][1]);
@@ -227,46 +220,55 @@ function draw() {
         else ctx.lineTo(x, y);
       }
       ctx.closePath();
-
-      // Draw holes for ramps (if not bottom layer)
-      if (l > 0) {
-        for (const ramp of ramps) {
-          if (ramp.to.layer === l) {
-            const pt = layers[l].points[ramp.to.point];
-            const [cx, cy] = worldToScreen(pt[0], pt[1]);
-            ctx.moveTo(cx + 20, cy);
-            ctx.arc(cx, cy, 20, 0, Math.PI * 2, true);
-          }
-        }
-      }
-
       ctx.fill("evenodd");
       ctx.restore();
     }
   }
 
-  // Draw ramps (between layers)
+  // Draw placed ramps (as blue squares)
   for (const ramp of ramps) {
-    const fromLayer = layers[ramp.from.layer];
-    const toLayer = layers[ramp.to.layer];
-    if (!fromLayer || !toLayer) continue;
-    const [fx, fy] = worldToScreen(
-      fromLayer.points[ramp.from.point][0],
-      fromLayer.points[ramp.from.point][1]
-    );
-    const [tx, ty] = worldToScreen(
-      toLayer.points[ramp.to.point][0],
-      toLayer.points[ramp.to.point][1]
-    );
+    if (ramp.layer !== currentLayer) continue;
     ctx.save();
-    ctx.strokeStyle = "#0af";
-    ctx.setLineDash([8, 8]);
-    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.8;
+    ctx.translate(...worldToScreen(ramp.x, ramp.y));
+    ctx.rotate(ramp.angle);
+    ctx.fillStyle = "#0af";
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    const s = gridSize / 2;
     ctx.beginPath();
-    ctx.moveTo(fx, fy);
-    ctx.lineTo(tx, ty);
+    ctx.moveTo(-s, s);
+    ctx.lineTo(s, s);
+    ctx.lineTo(s, -s);
+    ctx.lineTo(-s, -s);
+    ctx.closePath();
+    ctx.fill();
     ctx.stroke();
-    ctx.setLineDash([]);
+    // Draw arrow
+    drawRampArrow(ctx, 0, 0, ramp.angle - Math.PI / 2);
+    ctx.restore();
+  }
+
+  // Draw ramp preview
+  if (rampPreview) {
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.translate(...worldToScreen(rampPreview.x, rampPreview.y));
+    ctx.rotate(rampPreview.angle);
+    ctx.fillStyle = "#0af";
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    const s = gridSize / 2;
+    ctx.beginPath();
+    ctx.moveTo(-s, s);
+    ctx.lineTo(s, s);
+    ctx.lineTo(s, -s);
+    ctx.lineTo(-s, -s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Draw arrow for preview
+    drawRampArrow(ctx, 0, 0, rampPreview.angle - Math.PI / 2);
     ctx.restore();
   }
 
@@ -289,16 +291,25 @@ function draw() {
     // Points
     for (let i = 0; i < layer.points.length; i++) {
       const [x, y] = worldToScreen(layer.points[i][0], layer.points[i][1]);
-      // Highlight ramp selection
-      let highlight = false;
-      if (rampMode && rampStart && l === rampStart.layer && i === rampStart.point) highlight = true;
-      ctx.fillStyle = highlight ? "#0af" : (l === currentLayer && i === selectedPoint ? "#0f0" : "#fff");
+      ctx.fillStyle = (l === currentLayer && i === selectedPoint) ? "#0f0" : "#fff";
       ctx.beginPath();
       ctx.arc(x, y, 6, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
   }
+
+  ramps.forEach(ramp => {
+    if (ramp.layer !== currentLayer) return;
+    const [sx, sy] = worldToScreen(ramp.x, ramp.y);
+    // Draw ramp base (optional)
+    ctx.beginPath();
+    ctx.arc(sx, sy, gridSize * 0.3, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#00f";
+    ctx.stroke();
+    // Draw arrow
+    drawRampArrow(ctx, sx, sy, ramp.angle - Math.PI / 2);
+});
 }
 
 function worldToScreen(x, y) {
@@ -382,6 +393,46 @@ window.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
     e.preventDefault();
     undo();
+    return;
+  }
+  // Ramp preview controls
+  if (rampPreview) {
+    let moved = false;
+    if (e.key === "ArrowUp") { rampPreview.y -= gridSize; moved = true; }
+    if (e.key === "ArrowDown") { rampPreview.y += gridSize; moved = true; }
+    if (e.key === "ArrowLeft") { rampPreview.x -= gridSize; moved = true; }
+    if (e.key === "ArrowRight") { rampPreview.x += gridSize; moved = true; }
+    if (e.key.toLowerCase() === "q") {
+      rampPreview.angle -= Math.PI / 2;
+      rampPreview.angle = (rampPreview.angle + 2 * Math.PI) % (2 * Math.PI);
+      moved = true;
+    }
+    if (e.key.toLowerCase() === "e") {
+      rampPreview.angle += Math.PI / 2;
+      rampPreview.angle = (rampPreview.angle + 2 * Math.PI) % (2 * Math.PI);
+      moved = true;
+    }
+    if (e.key === "Enter") {
+      pushUndo();
+      ramps.push({
+        layer: rampPreview.layer,
+        x: rampPreview.x,
+        y: rampPreview.y,
+        angle: rampPreview.angle
+      });
+      rampPreview = null;
+      draw();
+      return;
+    }
+    if (e.key === "Escape") {
+      rampPreview = null;
+      draw();
+      return;
+    }
+    if (moved) {
+      draw();
+      e.preventDefault();
+    }
   }
 });
 
@@ -426,8 +477,7 @@ document.getElementById('removeLayerBtn').onclick = () => {
   if (layers.length <= 1) return;
   pushUndo();
   layers.splice(currentLayer, 1);
-  // Remove ramps connected to this layer
-  ramps = ramps.filter(r => r.from.layer !== currentLayer && r.to.layer !== currentLayer);
+  ramps = ramps.filter(r => r.layer !== currentLayer);
   if (currentLayer >= layers.length) currentLayer = layers.length - 1;
   selectedPoint = null;
   updateLayerList();
@@ -444,7 +494,7 @@ document.getElementById('floorColor').oninput = e => {
 // --- Ramp Tool ---
 document.getElementById('rampModeBtn').onclick = function() {
   rampMode = !rampMode;
-  rampStart = null;
+  rampPreview = null;
   this.classList.toggle('active', rampMode);
 };
 
@@ -458,36 +508,22 @@ canvas.addEventListener("mousedown", e => {
   const [wx, wy] = screenToWorld(e.clientX, e.clientY);
   const [sx, sy] = snap(wx, wy);
 
-  // Ramp mode: select points on two different layers
+  // Ramp mode: place ramp preview
   if (rampMode) {
-    for (let l = 0; l < layers.length; l++) {
-      const layer = layers[l];
-      for (let i = 0; i < layer.points.length; i++) {
-        const [x, y] = layer.points[i];
-        if (Math.hypot(x - wx, y - wy) < 10) {
-          if (!rampStart) {
-            rampStart = { layer: l, point: i };
-            draw();
-            return;
-          } else if (rampStart.layer !== l) {
-            // Only allow ramp from lower to higher layer
-            if (rampStart.layer < l) {
-              pushUndo();
-              ramps.push({ from: rampStart, to: { layer: l, point: i } });
-              rampStart = null;
-              draw();
-              return;
-            } else if (rampStart.layer > l) {
-              pushUndo();
-              ramps.push({ from: { layer: l, point: i }, to: rampStart });
-              rampStart = null;
-              draw();
-              return;
-            }
-          }
-        }
-      }
+    if (currentLayer === 0) {
+        alert("Cannot place ramps on the bottom layer!");
+        return;
     }
+    // Start ramp preview at snapped grid center
+    const rx = Math.round(wx / gridSize) * gridSize + gridSize / 2;
+    const ry = Math.round(wy / gridSize) * gridSize + gridSize / 2;
+    rampPreview = {
+        layer: currentLayer,
+        x: rx,
+        y: ry,
+        angle: 0
+    };
+    draw();
     return;
   }
 
@@ -561,7 +597,21 @@ canvas.addEventListener("wheel", e => {
   draw();
 });
 
-canvas.addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("contextmenu", function(e) {
+    if (!rampMode) return;
+    e.preventDefault();
+    const [wx, wy] = screenToWorld(e.clientX, e.clientY);
+    // Find ramp under mouse (use a small radius, e.g. 0.5 grid)
+    const hit = ramps.findIndex(r =>
+        r.layer === currentLayer &&
+        Math.hypot(r.x - wx, r.y - wy) < gridSize * 0.5
+    );
+    if (hit !== -1) {
+        ramps.splice(hit, 1);
+        draw();
+    }
+    // Do NOT place or preview a ramp here!
+});
 
 window.addEventListener("resize", () => {
   canvas.width = window.innerWidth;
@@ -590,6 +640,35 @@ document.getElementById('saveBtn').onclick = async function() {
 updateLayerList();
 document.getElementById('floorColor').value = layers[currentLayer].color;
 draw();
+
+function drawRampArrow(ctx, x, y, angle, size = gridSize * 0.4) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(size, 0);
+  ctx.lineTo(size - 6, -6);
+  ctx.moveTo(size, 0);
+  ctx.lineTo(size - 6, 6);
+  ctx.strokeStyle = "#00f";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+// In your draw() loop for ramps:
+ramps.forEach(ramp => {
+    if (ramp.layer !== currentLayer) return;
+    const [sx, sy] = worldToScreen(ramp.x, ramp.y);
+    // Draw ramp base (optional)
+    ctx.beginPath();
+    ctx.arc(sx, sy, gridSize * 0.3, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#00f";
+    ctx.stroke();
+    // Draw arrow
+    drawRampArrow(ctx, sx, sy, ramp.angle - Math.PI / 2);
+});
   </script>
 </body>
 </html>

@@ -1,10 +1,11 @@
+const scale = 12.5; // Match this to your editor's gridSize
+
 /**
  * Builds Babylon.js wall meshes from a 2D array of wall segments.
  * @param {BABYLON.Scene} scene - The Babylon.js scene.
  * @param {Array} wallData - Array of wall segments, each [[x1, y1], [x2, y2]].
  * @param {Object} [options] - Optional: {height, thickness, y}
- * @returns {BABYLON.Mesh[
- * ]} Array of wall meshes.
+ * @returns {BABYLON.Mesh[]} Array of wall meshes.
  */
 function buildWallsFromArray(scene, wallData, options = {}) {
     const height = options.height || 4;
@@ -12,11 +13,8 @@ function buildWallsFromArray(scene, wallData, options = {}) {
     const y = options.y || height / 2;
 
     const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
-    wallMat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6); // light gray
-    wallMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-    wallMat.emissiveColor = new BABYLON.Color3(0, 0, 0);
-    wallMat.alpha = 1; // fully opaque
-    wallMat.backFaceCulling = false; // render both sides
+    wallMat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+    wallMat.backFaceCulling = false;
 
     const walls = [];
     for (const [[x1, z1], [x2, z2]] of wallData) {
@@ -98,6 +96,63 @@ export function extractWallSegments(mapData) {
     return allWalls;
 }
 
+// Helper: get polygon points in order (fallback to convex hull)
+function getPolygonPoints(points, walls) {
+    if (points.length < 3) return null;
+    if (!walls || walls.length < 3) return convexHull(points);
+    // Build adjacency list
+    const adj = {};
+    for (const [a, b] of walls) {
+        if (!adj[a]) adj[a] = [];
+        if (!adj[b]) adj[b] = [];
+        adj[a].push(b);
+        adj[b].push(a);
+    }
+    let start = walls[0][0];
+    const poly = [start];
+    let prev = null, curr = start;
+    while (true) {
+        const nexts = adj[curr].filter(n => n !== prev);
+        if (nexts.length === 0) break;
+        const next = nexts[0];
+        if (next === start) break;
+        poly.push(next);
+        prev = curr;
+        curr = next;
+        if (poly.length > points.length + 2) break;
+    }
+    if (poly.length >= 3 && adj[poly[poly.length-1]].includes(start)) {
+        return poly.map(i => points[i]);
+    }
+    return convexHull(points);
+}
+
+// Convex hull (Graham scan)
+function convexHull(points) {
+    points = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const n = points.length;
+    if (n < 3) return null;
+    const lower = [];
+    for (let p of points) {
+        while (lower.length >= 2 && cross(lower[lower.length-2], lower[lower.length-1], p) <= 0)
+            lower.pop();
+        lower.push(p);
+    }
+    const upper = [];
+    for (let i = n - 1; i >= 0; i--) {
+        const p = points[i];
+        while (upper.length >= 2 && cross(upper[upper.length-2], upper[upper.length-1], p) <= 0)
+            upper.pop();
+        upper.push(p);
+    }
+    upper.pop();
+    lower.pop();
+    return lower.concat(upper);
+}
+function cross(a, b, o) {
+    return (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
+}
+
 /**
  * Builds all layers' walls and (optionally) ramps in Babylon.js.
  * @param {BABYLON.Scene} scene
@@ -106,55 +161,128 @@ export function extractWallSegments(mapData) {
  * @returns {BABYLON.Mesh[]} Array of all wall meshes.
  */
 export function buildMultiLayerMap(scene, mapData, options = {}) {
-    const layerHeight = options.layerHeight || 6;
+    const meshes = [];
+    const gridSize = 1; // <-- Move this to the top!
+    const layerHeight = options.layerHeight || 4;
     const wallHeight = options.wallHeight || 4;
     const wallThickness = options.wallThickness || 0.5;
-    const meshes = [];
 
     if (!mapData.layers) return meshes;
 
-    // Build walls for each layer, offsetting Y by layer index
+    // --- Render walls ---
     mapData.layers.forEach((layer, i) => {
         const y = i * layerHeight + wallHeight / 2;
         const wallSegs = [];
         for (const [a, b] of layer.walls) {
             const p1 = layer.points[a];
             const p2 = layer.points[b];
-            // Babylon uses X,Z for horizontal plane, so treat y as z
             wallSegs.push([[p1[0], p1[1]], [p2[0], p2[1]]]);
         }
         const layerWalls = buildWallsFromArray(scene, wallSegs, { height: wallHeight, thickness: wallThickness, y });
         meshes.push(...layerWalls);
     });
 
-    // Optionally: visualize ramps as thin boxes or lines
+    // --- Render ramps as tilted boxes ---
     if (mapData.ramps) {
         for (const ramp of mapData.ramps) {
-            const fromL = mapData.layers[ramp.from.layer];
-            const toL = mapData.layers[ramp.to.layer];
-            if (!fromL || !toL) continue;
-            const p1 = fromL.points[ramp.from.point];
-            const p2 = toL.points[ramp.to.point];
-            const y1 = ramp.from.layer * layerHeight + wallHeight / 2;
-            const y2 = ramp.to.layer * layerHeight + wallHeight / 2;
-            // Draw a thin box or cylinder between (p1, y1) and (p2, y2)
-            const rampMesh = BABYLON.MeshBuilder.CreateTube("ramp", {
-                path: [
-                    new BABYLON.Vector3(p1[0], y1, p1[1]),
-                    new BABYLON.Vector3(p2[0], y2, p2[1])
-                ],
-                radius: 0.2,
-                sideOrientation: BABYLON.Mesh.DOUBLESIDE
+            if (ramp.layer === 0) continue;
+            // Use vertical spacing between layers for ramp height
+            const rampHeight = layerHeight;
+            const y = ramp.layer * layerHeight - rampHeight / 2;
+            const mesh = BABYLON.MeshBuilder.CreateBox("rampBox", {
+                width: gridSize*4,
+                height: rampHeight,
+                depth: gridSize
             }, scene);
+            mesh.position = new BABYLON.Vector3(ramp.x, y, ramp.y);
+            mesh.rotation = new BABYLON.Vector3(-Math.PI / 4, -ramp.angle, 0);
+            // No extra Y offset needed!
             const mat = new BABYLON.StandardMaterial("rampMat", scene);
             mat.diffuseColor = new BABYLON.Color3(0, 0.7, 1);
             mat.emissiveColor = new BABYLON.Color3(0, 0.3, 1);
-            rampMesh.material = mat;
-            meshes.push(rampMesh);
+            mat.backFaceCulling = false;
+            mesh.material = mat;
+            meshes.push(mesh);
         }
     }
 
+    // --- Render floors as convex shapes (new code) ---
+    const floorThickness = 0.1 * gridSize;
+    mapData.layers.forEach((layer, i) => {
+        if (i === 0) return; // Skip the most bottom layer
+        // Get the polygon points for this layer
+        const poly2d = getPolygonPoints(layer.points, layer.walls);
+        if (poly2d && poly2d.length >= 3) {
+            // Place the floor so its top is 0.1 below the top of the walls
+            const y = i * gridSize + gridSize - floorThickness / 2;
+            const mesh = createConvexFloor(scene, poly2d, y, layer.color, floorThickness, 1);
+            if (mesh) {
+                mesh.material.backFaceCulling = false;
+                meshes.push(mesh);
+            }
+        }
+    });
+
     return meshes;
+}
+
+// Now with scaling!
+function createConvexFloor(scene, points, y, color, thickness = 1, scale = 1) {
+    // points: [[x, z], ...] in order (convex)
+    if (points.length < 3) return null;
+    const positions = [];
+    const indices = [];
+
+    // Top and bottom vertices
+    for (const [x, z] of points) {
+        positions.push(x * scale, y + thickness / 2, z * scale); // top
+    }
+    for (const [x, z] of points) {
+        positions.push(x * scale, y - thickness / 2, z * scale); // bottom
+    }
+
+    const n = points.length;
+
+    // Top face (fan from first top vertex)
+    for (let i = 1; i < n - 1; i++) {
+        indices.push(0, i, i + 1);
+    }
+    // Bottom face (fan, reversed winding)
+    for (let i = 1; i < n - 1; i++) {
+        indices.push(n, n + i + 1, n + i);
+    }
+    // Side faces
+    for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        // 4 vertices per quad: top[i], top[next], bottom[next], bottom[i]
+        const ti = i;
+        const tnext = next;
+        const bi = n + i;
+        const bnext = n + next;
+        // Two triangles per quad
+        indices.push(ti, tnext, bnext);
+        indices.push(ti, bnext, bi);
+    }
+
+    const vertexData = new BABYLON.VertexData();
+    vertexData.positions = positions;
+    vertexData.indices = indices;
+    vertexData.normals = [];
+    BABYLON.VertexData.ComputeNormals(positions, indices, vertexData.normals);
+
+    const mesh = new BABYLON.Mesh("convexFloor", scene);
+    vertexData.applyToMesh(mesh);
+
+    const mat = new BABYLON.StandardMaterial("floorMat", scene);
+    if (color && color.startsWith("#")) {
+        const r = parseInt(color.substr(1,2),16)/255;
+        const g = parseInt(color.substr(3,2),16)/255;
+        const b = parseInt(color.substr(5,2),16)/255;
+        mat.diffuseColor = new BABYLON.Color3(r,g,b);
+    }
+    mat.backFaceCulling = false; // <--- important for no see-through
+    mesh.material = mat;
+    return mesh;
 }
 
 export { buildWallsFromArray, exportWallData };

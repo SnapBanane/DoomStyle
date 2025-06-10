@@ -1,3 +1,16 @@
+// Ensure Babylon.js and Earcut are available
+if (window.BABYLON && window.earcut) {
+    window.BABYLON.Earcut = window.earcut;
+} else {
+    // Wait for both to be available before assigning
+    const waitForBabylonAndEarcut = setInterval(() => {
+        if (window.BABYLON && window.earcut) {
+            window.BABYLON.Earcut = window.earcut;
+            clearInterval(waitForBabylonAndEarcut);
+        }
+    }, 10);
+}
+
 import { initShadowEngine } from "./shadow-engine.js";
 import { buildMultiLayerMap, fetchWallData } from "./mapConstructor.js"; // <-- import buildMultiLayerMap
 
@@ -12,31 +25,25 @@ export const createScene = async (engine, canvas) => {
     // Fetch map data (multi-layer)
     const mapData = await fetchWallData();
 
-    // Find bounds for all points in all layers
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    if (mapData.layers) {
-        mapData.layers.forEach(layer => {
-            layer.points.forEach(([x, y]) => {
-                if (x < minX) minX = x;
-                if (y < minY) minY = y;
-                if (x > maxX) maxX = x;
-                if (y > maxY) maxY = y;
-            });
-        });
-    }
+    const scale = 0.1; // Adjust as needed for your world size
 
-    const rangeX = maxX - minX;
-    const rangeY = maxY - minY;
-    const normScale = 20;
-
-    // Normalize all points in all layers
+    // Scale all points in all layers (no centering)
     if (mapData.layers) {
         mapData.layers.forEach(layer => {
             layer.points = layer.points.map(v => [
-                rangeX === 0 ? 50 : ((v[0] - minX) / rangeX) * normScale - normScale / 2,
-                rangeY === 0 ? 50 : ((v[1] - minY) / rangeY) * normScale - normScale / 2
+                v[0] * scale + 2,
+                v[1] * scale
             ]);
         });
+    }
+
+    // Scale ramps as well (no centering)
+    if (mapData.ramps) {
+        mapData.ramps = mapData.ramps.map(ramp => ({
+            ...ramp,
+            x: ramp.x * scale + 2,
+            y: ramp.y * scale
+        }));
     }
 
     // Build all layers and ramps
