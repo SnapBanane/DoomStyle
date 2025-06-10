@@ -271,7 +271,7 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
         const poly2d = getPolygonPoints(layer.points, layer.walls);
         if (poly2d && poly2d.length >= 3) {
             // Place the floor so its top is 0.1 below the top of the walls
-            const y = i * gridSize + gridSize - floorThickness / 2;
+            const y = i * layerHeight + wallHeight - wallHeight - floorThickness / 2;
             const mesh = createConvexFloor(scene, poly2d, y, layer.color, floorThickness, 1);
             if (mesh) {
                 mesh.material.backFaceCulling = false;
