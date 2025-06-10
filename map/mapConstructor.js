@@ -244,9 +244,8 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
     // --- Render ramps as real ramps (prisms) ---
     if (mapData.ramps) {
         for (const ramp of mapData.ramps) {
-            if (ramp.layer === 0) continue;
-            const rampHeight = layerHeight * 2;
-            const y = ramp.layer * layerHeight - rampHeight / 2;
+            const rampHeight = layerHeight * 2; // Adjust height based on layer
+            const y = ramp.layer;
             // width and depth can be adjusted as needed
             const width = gridSize * 4;
             const depth = gridSize * 4;

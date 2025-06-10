@@ -497,10 +497,6 @@ canvas.addEventListener("mousedown", e => {
 
   // Ramp mode: place ramp preview
   if (rampMode) {
-    if (currentLayer === 0) {
-        alert("Cannot place ramps on the bottom layer!");
-        return;
-    }
     // Start ramp preview at snapped grid center
     const rx = Math.round(wx / gridSize) * gridSize + gridSize / 2;
     const ry = Math.round(wy / gridSize) * gridSize + gridSize / 2;

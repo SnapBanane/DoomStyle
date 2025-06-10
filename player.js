@@ -124,23 +124,30 @@ function setupPlayerControls(scene, player, camera) {
 }
 
 
-function isPlayerOnGround(player) { // Check if the player is on ground with raycasting
-    const rayLength = 0.75;
-    const offset = new BABYLON.Vector3(0, -0.5, 0);
-    const rayOrigin = new BABYLON.Vector3(
-        player.position.x,
-        player.position.y,
-        player.position.z
-    );
+function isPlayerOnGround(player) {
+    const scene = player.getScene();
+    const rayLength = 0.8;
+    const footRadius = 0.4; // How far from center to check (adjust as needed)
+    const rayOrigin = player.position.clone();
+    const directions = [
+        BABYLON.Vector3.Down(), // straight down
+        new BABYLON.Vector3(footRadius, 0, 0).normalize().add(BABYLON.Vector3.Down()).normalize(),
+        new BABYLON.Vector3(-footRadius, 0, 0).normalize().add(BABYLON.Vector3.Down()).normalize(),
+        new BABYLON.Vector3(0, 0, footRadius).normalize().add(BABYLON.Vector3.Down()).normalize(),
+        new BABYLON.Vector3(0, 0, -footRadius).normalize().add(BABYLON.Vector3.Down()).normalize()
+    ];
 
-    const ray = new BABYLON.Ray(rayOrigin, BABYLON.Vector3.Down(), rayLength); // ray down
-    const hit = player.getScene().pickWithRay(ray, (mesh) => mesh !== player && mesh.isPickable); // filter player
-
-    if (hit.hit) {
-        return true;
-    } else {
-        return false; 
+    for (const dir of directions) {
+        const ray = new BABYLON.Ray(rayOrigin, dir, rayLength);
+        const hit = scene.pickWithRay(ray, mesh =>
+            mesh !== player && mesh.isPickable && mesh.name !== "wall"
+        );
+        if (hit.hit && hit.getNormal && hit.getNormal().y > 0.5) {
+            // Only count as ground if the surface is not too steep (prevents wall jumps)
+            return true;
+        }
     }
+    return false;
 }
 
 function checkClip(player, camera, scene, baseDirection, offsets) { // deprecated function but could be used for hit detection on enemys if too close
