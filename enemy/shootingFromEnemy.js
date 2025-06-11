@@ -25,13 +25,13 @@ export function rayCastShootFromEnemy(scene, enemy) {
 
     
     // Optional: visualize the ray for debugging
-    // const rayLine = BABYLON.MeshBuilder.CreateLines("rayLine", {
-    //     points: [rayOrigin, rayOrigin.add(forward.scale(rayLength))],
-    // }, scene);
-    // rayLine.color = new BABYLON.Color3(1, 0, 0);
+    const rayLine = BABYLON.MeshBuilder.CreateLines("rayLine", {
+        points: [rayOrigin, rayOrigin.add(forward.scale(rayLength))],
+    }, scene);
+    rayLine.color = new BABYLON.Color3(1, 0, 0);
 
-    // setTimeout(() => {
-    //     rayLine.dispose();
-    // }, 1000);
+    setTimeout(() => {
+        rayLine.dispose();
+    }, 1000);
     
 }

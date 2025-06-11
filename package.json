@@ -19,6 +19,7 @@
   "description": "",
   "dependencies": {
     "earcut": "^3.0.1",
+    "epress": "^0.0.1-security",
     "express": "^5.1.0"
   }
 }

@@ -141,8 +141,7 @@ function isPlayerOnGround(player) {
         const ray = new BABYLON.Ray(rayOrigin, dir, rayLength);
         const hit = scene.pickWithRay(ray, mesh =>
             mesh !== player && mesh.isPickable);
-        if (hit.hit && hit.getNormal && hit.getNormal().y > 0.5) {
-            // Only count as ground if the surface is not too steep (prevents wall jumps)
+        if (hit.hit && hit.getNormal && hit.getNormal() && hit.getNormal().y > 0.5) {
             return true;
         }
     }
