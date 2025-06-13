@@ -12,60 +12,23 @@ if (window.BABYLON && window.earcut) {
 }
 
 import { initShadowEngine } from "./shadow-engine.js";
-import { buildMultiLayerMap, fetchWallData } from "./mapConstructor.js"; // <-- import buildMultiLayerMap
+import { buildMultiLayerMap, fetchWallData, buildEnemyMap } from "./mapConstructor.js"; // <-- import buildMultiLayerMap
 
-export const createScene = async (engine, canvas) => {
-    const scene = new BABYLON.Scene(engine); // empty scene
-
-    //const light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(-1, -1, 0), scene);
-    //light.position = new BABYLON.Vector3(-10,30,0);
+export const createScene = async (scene, canvas) => {
 
     const hemiLight = new BABYLON.HemisphericLight("hemiLight", new BABYLON.Vector3(0, 1, 0), scene);
     hemiLight.intensity = 0.5;
 
-    const sun = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-1, -2, -1), scene);
-    sun.position = new BABYLON.Vector3(20, 40, 20);
-    sun.intensity = 0.7;
-
-    const sunDir = new BABYLON.Vector3(-0.638, 0.468, 0.612).normalize();
-    const sunDistance = 100;
-
-    if (sun) {
-        sun.position = sunDir.scale(sunDistance);
-        sun.direction = sunDir.negate(); // turn the vector
-    }
+    const sun = buildSun(scene);
 
     const ground = buildGround(scene);
+    ground.receiveShadows = true;
 
-    // Fetch map data (multi-layer)
-    const mapData = await fetchWallData();
+    const mapData = await getMapData()
 
-    const scale = 0.05; // Adjust as needed for your world size
-
-    // Scale all points in all layers (no centering)
-    if (mapData.layers) {
-        mapData.layers.forEach(layer => {
-            layer.points = layer.points.map(v => [
-                v[0] * scale + 2,
-                v[1] * scale
-            ]);
-        });
-    }
-
-    // Scale ramps as well (no centering)
-    if (mapData.ramps) {
-        mapData.ramps = mapData.ramps.map(ramp => ({
-            ...ramp,
-            x: ramp.x * scale + 2,
-            y: ramp.y * scale
-        }));
-    }
-
-    // Build all layers and ramps
+    // construct map meshes with the scaled map data
     const mapMeshes = buildMultiLayerMap(scene, mapData, { layerHeight: 2, wallHeight: 2, wallThickness: 0.5 });
 
-    // shadow stuff
-    ground.receiveShadows = true;
     const objects = [...mapMeshes]; // flatten the array (this needs to be done because buildMultiLayerMap returns an array of arrays)
     const lights = [sun, hemiLight];
     initShadowEngine(scene, lights, objects);
@@ -119,4 +82,64 @@ const buildSkyBox = (scene) => {
 
 
     return skybox;
+}
+
+function scaleMap(mapData, scale) {
+    if (mapData.layers) {
+        mapData.layers.forEach(layer => {
+            layer.points = layer.points.map(v => [
+                v[0] * scale + 2,
+                v[1] * scale
+            ]);
+        });
+    }
+
+    if (mapData.ramps) {
+        mapData.ramps = mapData.ramps.map(ramp => ({
+            ...ramp,
+            x: ramp.x * scale + 2,
+            y: ramp.y * scale
+        }));
+    }
+
+    if (mapData.enemies) {
+        mapData.enemies = mapData.enemies.map(enemy => ({
+            ...enemy,
+            x: enemy.x * scale + 2,
+            y: enemy.y * scale
+        }));
+    }
+
+    return mapData;
+}
+
+function buildSun(scene) {
+    const sun = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-1, -2, -1), scene);
+    sun.position = new BABYLON.Vector3(20, 40, 20);
+    sun.intensity = 0.7;
+
+    const sunDir = new BABYLON.Vector3(-0.638, 0.468, 0.612).normalize();
+    const sunDistance = 100;
+
+    if (sun) {
+        sun.position = sunDir.scale(sunDistance);
+        sun.direction = sunDir.negate(); // turn the vector
+    }
+
+    return sun;
+}
+
+const getMapData = async () => {
+    // fetch map data then rescale 
+    const mapData = await fetchWallData();
+    const scale = 0.05;
+
+    const scaledData = scaleMap(mapData, scale);
+
+    return scaledData; 
+}
+
+export const initEnemies = async (scene) => {
+    const mapData = await getMapData();
+    return buildEnemyMap(scene, mapData);
 }

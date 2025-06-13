@@ -1,3 +1,6 @@
+import { aiForEnemy0 } from "../enemy/enemy-0.js";
+import { aiForEnemy1 } from "../enemy/enemy-1.js";
+
 const scale = 12.5; // Match this to your editor's gridSize
 
 /**
@@ -262,7 +265,7 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
         }
     }
 
-    // --- Render floors as convex shapes (new code) ---
+    // --- Render floors as convex shapes ---
     const floorThickness = 0.1 * gridSize;
     mapData.layers.forEach((layer, i) => {
         if (i === 0) return; // Skip the most bottom layer
@@ -336,9 +339,43 @@ function createConvexFloor(scene, points, y, color, thickness = 1, scale = 1) {
         const b = parseInt(color.substr(5,2),16)/255;
         mat.diffuseColor = new BABYLON.Color3(r,g,b);
     }
-    mat.backFaceCulling = false; // <--- important for no see-through
+    mat.backFaceCulling = false;
     mesh.material = mat;
     return mesh;
 }
 
-export { buildWallsFromArray, exportWallData };
+/**
+ * Spawns all enemies from mapData using the correct AI function.
+ * @param {BABYLON.Scene} scene
+ * @param {Object} mapData
+ * @param {Object} [options] - {layerHeight}
+ */
+function buildEnemyMap(scene, mapData, options = {}) {
+
+    console.warn("called Enemy Builder!");
+    console.log("mapData.enemies:", mapData.enemies);
+    console.log("mapData.ramps", mapData.ramps);
+
+    if (!mapData.enemies || !Array.isArray(mapData.enemies)) {
+        return;
+    }
+
+    const layerHeight = options.layerHeight || 4;
+
+    for (const enemy of mapData.enemies) {
+        const x = enemy.x;
+        const z = enemy.y;
+        const y = (enemy.layer || 0) * layerHeight;
+        if (enemy.type === 1) {
+            if (typeof window.spawnEnemy0 === "function") {
+                window.spawnEnemy0(x, y, z);
+            }
+        } else if (enemy.type === 2) {
+            if (typeof window.spawnEnemy1 === "function") {
+                window.spawnEnemy1(x, y, z);
+            }
+        }
+    }
+}
+
+export { buildWallsFromArray, exportWallData, buildEnemyMap };

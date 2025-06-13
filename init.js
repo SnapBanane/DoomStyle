@@ -1,41 +1,44 @@
-import { createScene } from './map/map.js';
+import { createScene, initEnemies } from './map/map.js';
 import { setupPlayerControls } from './player.js';
 import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 import { aiForEnemy0 } from './enemy/enemy-0.js';
 import { aiForEnemy1 } from './enemy/enemy-1.js';
 import { updateHealth } from './map/GUI.js';
+import { buildEnemyMap } from './map/mapConstructor.js';
 
 export async function startGame() {
     const canvas = document.getElementById("renderCanvas");
     const engine = new BABYLON.Engine(canvas, true);
 
+    // Create the scene here!
+    const scene = new BABYLON.Scene(engine);
+
     // Initialize Havok physics
     const havokInstance = await HavokPhysics();
     const physicsPlugin = new BABYLON.HavokPlugin(true, havokInstance);
 
-    const scene = await createScene(engine, canvas);
-
     // Expose the scene globally for console access
     window.scene = scene;
-   
+
+    // Assign spawn functions BEFORE createScene
     window.spawnEnemy0 = (x, y, z) => {
         if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") {
             console.error("Invalid arguments. Use the format: spawnEnemy0(x, y, z)");
             return;
         }
-
         aiForEnemy0(scene, x, y, z);
     };
 
     window.spawnEnemy1 = (x, y, z) => {
         if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") {
-            console.error("Invalid arguments. Use the format: spawnEnemy0(x, y, z)");
+            console.error("Invalid arguments. Use the format: spawnEnemy1(x, y, z)");
             return;
         }
-
         aiForEnemy1(scene, x, y, z);
     };
+
+    await createScene(scene, canvas);
 
     const gravityVector = new BABYLON.Vector3(0, -9.81, 0);
     scene.enablePhysics(gravityVector, physicsPlugin);
@@ -65,6 +68,8 @@ export async function startGame() {
     // Init Health Engine
     player.health = 100;
     updateHealth(player.health);
+
+    initEnemies(scene);
 
     // Register a render loop to repeatedly render the scene
     engine.runRenderLoop(function () {

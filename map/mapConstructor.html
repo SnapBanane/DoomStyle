@@ -735,14 +735,15 @@ window.addEventListener("resize", () => {
 
 // --- Save/Load ---
 function getMapData() {
-  // Save all layers and ramps
+  // Save all layers, ramps, and enemies
   return {
     layers: layers.map(l => ({
       points: l.points,
       walls: l.walls,
       color: l.color
     })),
-    ramps
+    ramps,
+    enemies
   };
 }
 document.getElementById('saveBtn').onclick = async function() {
