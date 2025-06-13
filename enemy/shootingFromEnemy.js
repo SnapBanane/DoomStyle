@@ -1,17 +1,22 @@
 export function rayCastShootFromEnemy(scene, enemy) {
-    const origin = enemy.position.clone(); // Enemy's current position
+    // Get world position of the gunAssembly's muzzle
+    const muzzleLocalPosition = new BABYLON.Vector3(0, 0.15, 2); // Match muzzle position from GunModel.js
+    const muzzleWorld = BABYLON.Vector3.TransformCoordinates(
+        muzzleLocalPosition,
+        enemy.getWorldMatrix()
+    );
 
-    // Compute the forward direction based on enemy's rotation
+    // Compute the forward direction considering both yaw and pitch
     const forward = new BABYLON.Vector3(
-        -(Math.sin(enemy.rotation.y)),
-        0,
-        -(Math.cos(enemy.rotation.y))
+        Math.sin(enemy.rotation.y) * Math.cos(enemy.rotation.x),
+        -Math.sin(enemy.rotation.x),
+        Math.cos(enemy.rotation.y) * Math.cos(enemy.rotation.x)
     );
 
     const rayLength = 1000;
-    const offsetDistance = 1;
+    const offsetDistance = 0.3; // Reduced offset since we're starting from muzzle
 
-    const rayOrigin = origin.add(forward.scale(offsetDistance));
+    const rayOrigin = muzzleWorld.add(forward.scale(offsetDistance));
     const ray = new BABYLON.Ray(rayOrigin, forward, rayLength);
 
     const hit = scene.pickWithRay(ray);

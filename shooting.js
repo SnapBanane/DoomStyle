@@ -17,7 +17,7 @@ export function rayCastShoot(scene, camera) {
         //console.log("No object hit by the ray.");
     }
 
-    /*
+    
     const rayLine = BABYLON.MeshBuilder.CreateLines("rayLine", {
         points: [rayOrigin, rayOrigin.add(forward.scale(rayLength))],
     }, scene);
@@ -26,5 +26,5 @@ export function rayCastShoot(scene, camera) {
     setTimeout(() => {
         rayLine.dispose();
     }, 100);
-    */
+    
 }
