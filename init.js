@@ -4,7 +4,7 @@ import './DevKit/console.js';
 import HavokPhysics from "https://cdn.babylonjs.com/havok/HavokPhysics_es.js";
 import { aiForEnemy0 } from './enemy/enemy-0.js';
 import { aiForEnemy1 } from './enemy/enemy-1.js';
-import { updateHealth } from './map/GUI.js';
+import { updateHealth, GUI, damagePlayer } from './map/GUI.js';
 import { buildEnemyMap } from './map/mapConstructor.js';
 
 export async function startGame() {
@@ -65,9 +65,14 @@ export async function startGame() {
     camera.minZ = 0.01;
     camera.maxZ = 10000;
 
+    GUI(scene);
+
     // Init Health Engine
     player.health = 100;
-    updateHealth(player.health);
+
+    window.player = player; // Expose player globally for console access
+
+    damagePlayer(40);
 
     initEnemies(scene);
 

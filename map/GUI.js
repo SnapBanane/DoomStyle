@@ -1,3 +1,5 @@
+let updateHealth = function () {};
+
 const GUI = (scene) => {
     const advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
 
@@ -80,9 +82,20 @@ function switchFrame(gunImage, frames) {
     }, 30);
 }
 
-function updateHealth(advancedTexture, health) {
-    // placeholder not yet implememnted
+function damagePlayer(amount) {
+    if (!window.player) {
+        console.warn("damagePlayer: No player object found on window.");
+        return;
+    }
+    const oldHealth = window.player.health;
+    window.player.health = Math.max(0, window.player.health - amount);
+    console.log(`damagePlayer: Damaged player by ${amount}. Health: ${oldHealth} -> ${window.player.health}`);
+    updateHealth(window.player.health);
+    if (window.player.health <= 0) {
+        console.log("damagePlayer: Player died.");
+        alert("You died");
+    }
 }
 
-export { GUI, switchFrame, updateHealth};
+export { GUI, switchFrame, updateHealth, damagePlayer};
 
