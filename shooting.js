@@ -11,10 +11,19 @@ export function rayCastShoot(scene, camera) {
     const hit = scene.pickWithRay(ray);
 
     if (hit && hit.pickedMesh) {
-        //console.log("Hit object:", hit.pickedMesh.name);
-        hit.pickedMesh.isHit = true; // Set a custom property on the hit mesh
+        // Check if the hit mesh is part of an enemy (either hitbox or part of enemy)
+        let targetMesh = hit.pickedMesh;
+        
+        // If the mesh has a hitbox reference, use that instead
+        if (targetMesh.hitBox) {
+            targetMesh = targetMesh.hitBox;
+        }
+        
+        // Set the hit flag on the appropriate mesh
+        targetMesh.isHit = true;
+        console.log("Hit object:", targetMesh.name);
     } else {
-        //console.log("No object hit by the ray.");
+        console.log("No object hit by the ray.");
     }
 
     
