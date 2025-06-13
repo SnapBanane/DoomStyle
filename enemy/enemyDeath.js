@@ -11,21 +11,28 @@ export function enemyDeath(enemy, enemyHealth) {
             console.log("Enemy defeated!");
 
             try {
-                // Find the gunPivot node that contains all the gun parts
-                const rootEnemy = enemy.parent ? enemy.parent : enemy;
-                const gunPivot = rootEnemy.getChildTransformNodes().find(node => node.name === "gunPivot");
+                // Special case: enemy0 is a simple mesh with no parent or gunPivot
+                if (!enemy.parent && enemy.name === "enemy") {
+                    if (enemy.physicsBody) {
+                        enemy.physicsBody.dispose();
+                    }
+                    enemy.dispose();
+                } else {
+                    // Find the gunPivot node that contains all the gun parts
+                    const rootEnemy = enemy.parent ? enemy.parent : enemy;
+                    const gunPivot = rootEnemy.getChildTransformNodes().find(node => node.name === "gunPivot");
 
-                if (gunPivot) {
-                    // Dispose all gun parts but keep the base
-                    gunPivot.getChildMeshes().forEach(mesh => {
-                        if (mesh.physicsBody) {
-                            mesh.physicsBody.dispose();
-                        }
-                        mesh.dispose();
-                    });
-                    gunPivot.dispose();
+                    if (gunPivot) {
+                        // Dispose all gun parts but keep the base
+                        gunPivot.getChildMeshes().forEach(mesh => {
+                            if (mesh.physicsBody) {
+                                mesh.physicsBody.dispose();
+                            }
+                            mesh.dispose();
+                        });
+                        gunPivot.dispose();
+                    }
                 }
-
             } catch (error) {
                 console.warn("Error during enemy cleanup:", error);
             }

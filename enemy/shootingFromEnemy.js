@@ -1,3 +1,5 @@
+import { damagePlayer } from "../map/GUI.js";
+
 export function rayCastShootFromEnemy(scene, enemy) {
     // Get world position of the gunAssembly's muzzle
     const muzzleLocalPosition = new BABYLON.Vector3(0, 0.15, 2); // Match muzzle position from GunModel.js
@@ -14,7 +16,7 @@ export function rayCastShootFromEnemy(scene, enemy) {
     );
 
     const rayLength = 1000;
-    const offsetDistance = 0.3; // Reduced offset since we're starting from muzzle
+    const offsetDistance = 0.3;
 
     const rayOrigin = muzzleWorld.add(forward.scale(offsetDistance));
     const ray = new BABYLON.Ray(rayOrigin, forward, rayLength);
@@ -23,7 +25,13 @@ export function rayCastShootFromEnemy(scene, enemy) {
 
     if (hit && hit.pickedMesh) {
         console.log("Enemy hit object:", hit.pickedMesh.name);
-        hit.pickedMesh.isHit = true; // Set a custom flag on the target
+
+        // If the hit object is the player, call damagePlayer
+        if (hit.pickedMesh.name === "player") {
+            damagePlayer(30);
+        } else {
+            hit.pickedMesh.isHit = true; // Set a custom flag on the target
+        }
     } else {
         console.log("Enemy ray missed.");
     }

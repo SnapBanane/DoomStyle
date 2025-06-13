@@ -69,7 +69,7 @@ export async function startGame() {
     player.health = 100;
     window.player = player
 
-    damagePlayer(40); // DEMO CALL DO NOT KEEP IN PRODUCTION CODE
+    //damagePlayer(40); // DEMO CALL DO NOT KEEP IN PRODUCTION CODE
 
     initEnemies(scene);
 

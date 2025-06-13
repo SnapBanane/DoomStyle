@@ -51,13 +51,13 @@ export function aiForEnemy1(scene, x, y, z) {
 
     if (player && enemy) {
         let lastRotation = new BABYLON.Vector3(0, 0, 0);
-        let timeAccumulator = 0;
+        let timeAccumulator = Math.random() * 2000; // Add random offset to start
         let returnStartTime = 0;
         let returnStartRotation = null;
         const returnDuration = 100; // Time in ms to return to tracking position
 
         const rotationOnDuration = 3000;    // 3 seconds rotating
-        const rotationOffDuration = 1000;   // 1 second frozen
+        const rotationOffDuration = 500;   // 0.5 second frozen
         const cycleDuration = rotationOnDuration + rotationOffDuration;
 
         let lastFrameTime = performance.now();
@@ -91,7 +91,7 @@ export function aiForEnemy1(scene, x, y, z) {
 
                 midFreezeCalled = false;
             } else {
-                if (!midFreezeCalled && cycleTime >= 3485 && cycleTime <= 3515) {
+                if (!midFreezeCalled && cycleTime >= 3240 && cycleTime <= 3260) {
                     rayCastShootFromEnemy(scene, gun.gunPivot);
                     midFreezeCalled = true;
                     returnStartTime = now;
