@@ -253,9 +253,9 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
                 ramp.x,
                 y,
                 ramp.y,
-                width,
+                width/2,
                 rampHeight/2,
-                depth,
+                depth/2,
                 ramp.angle
             );
             meshes.push(mesh);

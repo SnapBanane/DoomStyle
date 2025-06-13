@@ -40,7 +40,7 @@ export const createScene = async (engine, canvas) => {
     // Fetch map data (multi-layer)
     const mapData = await fetchWallData();
 
-    const scale = 0.1; // Adjust as needed for your world size
+    const scale = 0.05; // Adjust as needed for your world size
 
     // Scale all points in all layers (no centering)
     if (mapData.layers) {
