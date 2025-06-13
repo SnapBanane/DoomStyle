@@ -23,10 +23,17 @@ export const createScene = async (engine, canvas) => {
     const hemiLight = new BABYLON.HemisphericLight("hemiLight", new BABYLON.Vector3(0, 1, 0), scene);
     hemiLight.intensity = 0.5;
 
-    // Directional (sun) light with shadows
     const sun = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-1, -2, -1), scene);
     sun.position = new BABYLON.Vector3(20, 40, 20);
     sun.intensity = 0.7;
+
+    const sunDir = new BABYLON.Vector3(-0.638, 0.468, 0.612).normalize();
+    const sunDistance = 100;
+
+    if (sun) {
+        sun.position = sunDir.scale(sunDistance);
+        sun.direction = sunDir.negate(); // turn the vector
+    }
 
     const ground = buildGround(scene);
 
@@ -77,63 +84,6 @@ const buildGround = (scene) => {
     return ground;
 }
 
-const buildHouse = (width) => {
-    const box = buildBox(width);
-    const roof = buildRoof(width);
-
-    return BABYLON.Mesh.MergeMeshes([box, roof], true, false, null, false, true);
-}
-
-const buildBox = (width) => {
-    //texture
-    const boxMat = new BABYLON.StandardMaterial("boxMat");
-    boxMat.backFaceCulling = false
-    if (width == 2) {
-       boxMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/semihouse.png") 
-    }
-    else {
-        boxMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/cubehouse.png");   
-    }
-
-    //options parameter to set different images on each side
-    const faceUV = [];
-    if (width == 2) {
-        faceUV[0] = new BABYLON.Vector4(0.6, 0.0, 1.0, 1.0); //rear face
-        faceUV[1] = new BABYLON.Vector4(0.0, 0.0, 0.4, 1.0); //front face
-        faceUV[2] = new BABYLON.Vector4(0.4, 0, 0.6, 1.0); //right side
-        faceUV[3] = new BABYLON.Vector4(0.4, 0, 0.6, 1.0); //left side
-    }
-    else {
-        faceUV[0] = new BABYLON.Vector4(0.5, 0.0, 0.75, 1.0); //rear face
-        faceUV[1] = new BABYLON.Vector4(0.0, 0.0, 0.25, 1.0); //front face
-        faceUV[2] = new BABYLON.Vector4(0.25, 0, 0.5, 1.0); //right side
-        faceUV[3] = new BABYLON.Vector4(0.75, 0, 1.0, 1.0); //left side
-    }
-
-    /**** World Objects *****/
-    const box = BABYLON.MeshBuilder.CreateBox("box", {width: width, faceUV: faceUV, wrap: true});
-    box.material = boxMat;
-    box.position.y = 0.5;
-
-    return box;
-}
-
-const buildRoof = (width) => {
-    //texture
-    const roofMat = new BABYLON.StandardMaterial("roofMat");
-    roofMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/roof.jpg");
-    roofMat.backFaceCulling = false
-
-    const roof = BABYLON.MeshBuilder.CreateCylinder("roof", {diameter: 1.3, height: 1.2, tessellation: 3});
-    roof.material = roofMat;
-    roof.scaling.x = 0.75;
-    roof.scaling.y = width;
-    roof.rotation.z = Math.PI / 2;
-    roof.position.y = 1.22;
-
-    return roof;
-}
-
 const getGroundMat = (scene) => {
     const material = new BABYLON.StandardMaterial("material", scene);
 
@@ -169,9 +119,4 @@ const buildSkyBox = (scene) => {
 
 
     return skybox;
-}
-
-async function loadMap(scene) {
-    const wallData = await fetchWallData();
-    buildWallsFromArray(scene, wallData);
 }
