@@ -1,4 +1,5 @@
 import { enemyDeath } from "./enemyDeath.js";
+import { damagePlayer } from "../map/GUI.js";
 
 export function aiForEnemy0(scene, x, y, z) {
     const player = scene.getMeshByName("player");
@@ -13,6 +14,41 @@ export function aiForEnemy0(scene, x, y, z) {
             scene
         );
 
+    let lastDamageTime = 0;
+    const damageCooldown = 500; // 500ms between hits
+
+    scene.onBeforeRenderObservable.add(() => {
+        const direction = player.position.subtract(enemy.position).normalize();
+
+        // Movement and physics
+        const enemyBody = enemy.physicsBody?.body;
+        if (enemyBody && typeof enemyBody.applyForce === "function") {
+            const force = direction.scale(5);
+            enemyBody.applyForce(force, enemy.position);
+        }
+
+        // Update rotation
+        if (enemy.isRotating) {
+            const angle = Math.atan2(direction.z, direction.x);
+            enemy.rotation.y = -(angle + Math.PI / 2);
+        }
+
+        // Ray check for player contact
+        const rayOrigin = enemy.position;
+        const rayLength = 1.2; // Detection range
+        const ray = new BABYLON.Ray(rayOrigin, direction, rayLength);
+
+        const hit = scene.pickWithRay(ray, mesh => mesh.name === "player");
+        if (hit && hit.pickedMesh && hit.pickedMesh.name === "player") {
+            const now = Date.now();
+            if (now - lastDamageTime >= damageCooldown) {
+                damagePlayer(10);
+                lastDamageTime = now;
+            }
+        }
+
+        enemyDeath(enemy, 50);
+    });
 
     if (player && enemy) {
         // Add rotation control
@@ -22,17 +58,31 @@ export function aiForEnemy0(scene, x, y, z) {
         scene.onBeforeRenderObservable.add(() => {
             const direction = player.position.subtract(enemy.position).normalize();
 
-            // Movement code remains unchanged
+            // Movement and physics
             const enemyBody = enemy.physicsBody?.body;
             if (enemyBody && typeof enemyBody.applyForce === "function") {
                 const force = direction.scale(5);
                 enemyBody.applyForce(force, enemy.position);
             }
 
-            // Rotation only happens if isRotating is true
+            // Update rotation
             if (enemy.isRotating) {
                 const angle = Math.atan2(direction.z, direction.x);
                 enemy.rotation.y = -(angle + Math.PI / 2);
+            }
+
+            // Ray check for player contact
+            const rayOrigin = enemy.position;
+            const rayLength = 1.2; // Detection range
+            const ray = new BABYLON.Ray(rayOrigin, direction, rayLength);
+
+            const hit = scene.pickWithRay(ray, mesh => mesh.name === "player");
+            if (hit && hit.pickedMesh && hit.pickedMesh.name === "player") {
+                const now = Date.now();
+                if (now - lastDamageTime >= damageCooldown) {
+                    damagePlayer(10);
+                    lastDamageTime = now;
+                }
             }
 
             enemyDeath(enemy, 50);
