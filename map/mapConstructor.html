@@ -74,6 +74,8 @@
     </div>
     <button id="rampModeBtn" class="ramp-btn">Ramp Tool</button>
     <button id="saveBtn">Save Map</button>
+    <button id="enemySpawnerBtn" class="ramp-btn">Enemy Spawner</button>
+    <span id="enemyTypeLabel">Type: 1</span>
   </div>
   <script type="module">
 import { fetchWallData, saveWallData } from './mapConstructor.js';
@@ -84,6 +86,10 @@ let ramps = []; // {layer, x, y, angle}
 let currentLayer = 0;
 let rampMode = false;
 let rampPreview = null;
+let enemySpawnerMode = false;
+let enemyPreview = null;
+let enemyType = 1; // 1 or 2
+let enemies = []; // {layer, x, y, type}
 
 // Each layer: { points: [[x,y],...], walls: [[a,b],...], color: "#hex" }
 function createLayer(color = "#222222") {
@@ -125,6 +131,9 @@ if (wallData && wallData.length && !wallData.layers) {
 
 // --- Canvas and Drawing ---
 const canvas = document.getElementById("editor");
+
+canvas.addEventListener("contextmenu", e => e.preventDefault()); // prevent stupid menu on right click
+
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -267,6 +276,47 @@ function draw() {
     ctx.stroke();
     // Draw arrow for preview
     drawRampArrow(ctx, 0, 0, rampPreview.angle);
+    ctx.restore();
+  }
+
+  // Draw placed enemies
+  for (const enemy of enemies) {
+    if (enemy.layer !== currentLayer) continue;
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.translate(...worldToScreen(enemy.x, enemy.y));
+    ctx.fillStyle = enemy.type === 1 ? "#f80" : "#0f8";
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, gridSize * 0.3, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+    ctx.font = "bold 18px sans-serif";
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(enemy.type, 0, 0);
+    ctx.restore();
+  }
+
+  // Draw enemy preview
+  if (enemyPreview) {
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.translate(...worldToScreen(enemyPreview.x, enemyPreview.y));
+    ctx.fillStyle = enemyPreview.type === 1 ? "#f80" : "#0f8";
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, gridSize * 0.3, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+    ctx.font = "bold 18px sans-serif";
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(enemyPreview.type, 0, 0);
     ctx.restore();
   }
 
@@ -421,6 +471,45 @@ window.addEventListener('keydown', e => {
       e.preventDefault();
     }
   }
+  // Enemy preview controls
+  if (enemySpawnerMode && enemyPreview) {
+    let moved = false;
+    if (e.key === "ArrowUp") { enemyPreview.y -= gridSize; moved = true; }
+    if (e.key === "ArrowDown") { enemyPreview.y += gridSize; moved = true; }
+    if (e.key === "ArrowLeft") { enemyPreview.x -= gridSize; moved = true; }
+    if (e.key === "ArrowRight") { enemyPreview.x += gridSize; moved = true; }
+    if (e.key.toLowerCase() === "q") {
+      enemyType = 1;
+      document.getElementById('enemyTypeLabel').textContent = "Type: 1";
+      moved = true;
+    }
+    if (e.key.toLowerCase() === "e") {
+      enemyType = 2;
+      document.getElementById('enemyTypeLabel').textContent = "Type: 2";
+      moved = true;
+    }
+    if (e.key === "Enter") {
+      enemies.push({
+        layer: enemyPreview.layer,
+        x: enemyPreview.x,
+        y: enemyPreview.y,
+        type: enemyType
+      });
+      enemyPreview = null;
+      draw();
+      return;
+    }
+    if (e.key === "Escape") {
+      enemyPreview = null;
+      draw();
+      return;
+    }
+    if (moved) {
+      enemyPreview.type = enemyType;
+      draw();
+      e.preventDefault();
+    }
+  }
 });
 
 // --- Layer Controls ---
@@ -485,6 +574,21 @@ document.getElementById('rampModeBtn').onclick = function() {
   this.classList.toggle('active', rampMode);
 };
 
+// Enemy Spaner Tool
+document.getElementById('enemySpawnerBtn').onclick = function() {
+  enemySpawnerMode = !enemySpawnerMode;
+  enemyPreview = null;
+  this.classList.toggle('active', enemySpawnerMode);
+  document.getElementById('enemyTypeLabel').style.display = enemySpawnerMode ? 'inline' : 'none';
+  // Deactivate ramp mode if enemy spawner is activated
+  if (enemySpawnerMode) {
+    rampMode = false;
+    document.getElementById('rampModeBtn').classList.remove('active');
+    rampPreview = null;
+  }
+  draw();
+};
+
 // --- Mouse Events ---
 canvas.addEventListener("mousedown", e => {
   if (e.button === 1) {
@@ -510,6 +614,20 @@ canvas.addEventListener("mousedown", e => {
     return;
   }
 
+  // Enemy spawner mode: place enemy preview
+  if (enemySpawnerMode) {
+    const ex = Math.round(wx / gridSize) * gridSize + gridSize / 2;
+    const ey = Math.round(wy / gridSize) * gridSize + gridSize / 2;
+    enemyPreview = {
+      layer: currentLayer,
+      x: ex,
+      y: ey,
+      type: enemyType
+    };
+    draw();
+    return;
+  }
+
   // Right click: delete point or wall
   if (e.button === 2) {
     for (let i = 0; i < layers[currentLayer].points.length; i++) {
@@ -524,8 +642,6 @@ canvas.addEventListener("mousedown", e => {
         return;
       }
     }
-    draw();
-    return;
   }
 
   // Check for existing point
@@ -580,20 +696,35 @@ canvas.addEventListener("wheel", e => {
   draw();
 });
 
-canvas.addEventListener("contextmenu", function(e) {
-    if (!rampMode) return;
-    e.preventDefault();
-    const [wx, wy] = screenToWorld(e.clientX, e.clientY);
-    // Find ramp under mouse (use a small radius, e.g. 0.5 grid)
-    const hit = ramps.findIndex(r =>
-        r.layer === currentLayer &&
-        Math.hypot(r.x - wx, r.y - wy) < gridSize * 0.5
-    );
-    if (hit !== -1) {
-        ramps.splice(hit, 1);
-        draw();
+canvas.addEventListener("mousedown", e => {
+    if (e.button === 0 || e.button === 1) return; // prevent left click
+    if (rampMode) {
+      e.preventDefault();
+      const [wx, wy] = screenToWorld(e.clientX, e.clientY);
+      // Find ramp under mouse (use a small radius, e.g. 0.5 grid)
+      const hit = ramps.findIndex(r =>
+          r.layer === currentLayer &&
+          Math.hypot(r.x - wx, r.y - wy) < gridSize * 0.5
+      );
+      if (hit !== -1) {
+          ramps.splice(hit, 1);
+          draw();
+      }
     }
-    // Do NOT place or preview a ramp here!
+    else if (enemySpawnerMode) {
+      e.preventDefault();
+      const [wx, wy] = screenToWorld(e.clientX, e.clientY);
+      // Find enemy under mouse (use a small radius, e.g. 0.5 grid)
+      const hit = enemies.findIndex(enemy =>
+          enemy.layer === currentLayer &&
+          Math.hypot(enemy.x - wx, enemy.y - wy) < gridSize * 0.5
+      );
+      if (hit !== -1) {
+          enemies.splice(hit, 1);
+          draw();
+      }
+    }
+    else return;
 });
 
 window.addEventListener("resize", () => {
