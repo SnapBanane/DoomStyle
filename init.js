@@ -18,27 +18,23 @@ export async function startGame() {
 
     // Expose the scene globally for console access
     window.scene = scene;
-
-    // Define a global function to spawn an enemy at a specific position
-    window.spawnEnemy = (x, y, z) => {
+   
+    window.spawnEnemy0 = (x, y, z) => {
         if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") {
-            console.error("Invalid arguments. Use the format: spawnEnemy(x, y, z)");
+            console.error("Invalid arguments. Use the format: spawnEnemy0(x, y, z)");
             return;
         }
 
-        let whichEnemy = Math.floor(Math.random() * 2);
-        console.log(whichEnemy);
-        if (whichEnemy == 0){
-            aiForEnemy0(scene, x, y, z);
-        }
-        else if (whichEnemy == 1) {
-            aiForEnemy1(scene, x, y, z);
-        }
-        else {
-            console.log(error);
+        aiForEnemy0(scene, x, y, z);
+    };
+
+    window.spawnEnemy1 = (x, y, z) => {
+        if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") {
+            console.error("Invalid arguments. Use the format: spawnEnemy0(x, y, z)");
+            return;
         }
 
-        console.log(`Enemy spawned at position: [${x}, ${y}, ${z}]`);
+        aiForEnemy1(scene, x, y, z);
     };
 
     const gravityVector = new BABYLON.Vector3(0, -9.81, 0);
