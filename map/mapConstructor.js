@@ -351,11 +351,6 @@ function createConvexFloor(scene, points, y, color, thickness = 1, scale = 1) {
  * @param {Object} [options] - {layerHeight}
  */
 function buildEnemyMap(scene, mapData, options = {}) {
-
-    console.warn("called Enemy Builder!");
-    console.log("mapData.enemies:", mapData.enemies);
-    console.log("mapData.ramps", mapData.ramps);
-
     if (!mapData.enemies || !Array.isArray(mapData.enemies)) {
         return;
     }
