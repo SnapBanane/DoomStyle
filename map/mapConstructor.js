@@ -205,7 +205,6 @@ function createRampMesh(scene, x, y, z, width, height, depth, angle) {
     // Material
     const mat = new BABYLON.StandardMaterial("rampMat", scene);
     mat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
-    mat.emissiveColor = new BABYLON.Color3(0.6, 0.6, 0.6);
     mat.backFaceCulling = false;
     mesh.material = mat;
 

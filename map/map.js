@@ -17,8 +17,16 @@ import { buildMultiLayerMap, fetchWallData } from "./mapConstructor.js"; // <-- 
 export const createScene = async (engine, canvas) => {
     const scene = new BABYLON.Scene(engine); // empty scene
 
-    const light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(-1, -1, 0), scene);
-    light.position = new BABYLON.Vector3(-10,30,0);
+    //const light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(-1, -1, 0), scene);
+    //light.position = new BABYLON.Vector3(-10,30,0);
+
+    const hemiLight = new BABYLON.HemisphericLight("hemiLight", new BABYLON.Vector3(0, 1, 0), scene);
+    hemiLight.intensity = 0.5;
+
+    // Directional (sun) light with shadows
+    const sun = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(-1, -2, -1), scene);
+    sun.position = new BABYLON.Vector3(20, 40, 20);
+    sun.intensity = 0.7;
 
     const ground = buildGround(scene);
 
@@ -47,12 +55,13 @@ export const createScene = async (engine, canvas) => {
     }
 
     // Build all layers and ramps
-    buildMultiLayerMap(scene, mapData, { layerHeight: 2, wallHeight: 2, wallThickness: 0.5 });
+    const mapMeshes = buildMultiLayerMap(scene, mapData, { layerHeight: 2, wallHeight: 2, wallThickness: 0.5 });
 
     // shadow stuff
     ground.receiveShadows = true;
-    const objects = [];
-    initShadowEngine(scene, light, objects);
+    const objects = [...mapMeshes]; // flatten the array (this needs to be done because buildMultiLayerMap returns an array of arrays)
+    const lights = [sun, hemiLight];
+    initShadowEngine(scene, lights, objects);
 
     buildSkyBox(scene);
 
