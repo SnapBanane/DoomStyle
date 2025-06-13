@@ -19,15 +19,26 @@ export function aiForEnemy1(scene, x, y, z) {
         height: 2,
         depth: 2
     }, scene);
-    hitBox.position = new BABYLON.Vector3(0, 0, 0);
+    hitBox.position = new BABYLON.Vector3(0, 0.5, 0);
     hitBox.isVisible = false;
-    hitBox.checkCollisions = true;
     hitBox.parent = enemy;
     hitBox.isPickable = true;
 
-    // Make the hitbox determine hit detection for the whole enemy
-    gun.gunPivot.getChildMeshes().forEach(mesh => {
-        mesh.isPickable = false;  // Disable picking on individual gun parts
+    // Setup health system
+    hitBox.health = 50;  // Set health on hitbox
+    hitBox.isHit = false;
+    
+    // Make the hitbox handle hits directly
+    hitBox.onHit = () => {
+        if (hitBox.health <= 0) {
+            enemy.isDead = true;
+        }
+    };
+
+    // Make all parts of the turret share the same hit detection
+    [enemy, ...gun.gunPivot.getChildMeshes()].forEach(mesh => {
+        mesh.hitBox = hitBox;
+        mesh.isPickable = true;
     });
 
     // Add physics to the hitbox
@@ -53,7 +64,7 @@ export function aiForEnemy1(scene, x, y, z) {
         let midFreezeCalled = false;
 
         enemy.aiObserver = scene.onBeforeRenderObservable.add(() => {
-            if (enemy.isDead) {
+            if (hitBox.health <= 0) {  // Check hitbox health instead of enemy
                 scene.onBeforeRenderObservable.remove(enemy.aiObserver);
                 return;
             }
@@ -109,7 +120,7 @@ export function aiForEnemy1(scene, x, y, z) {
                 }
             }
 
-            enemyDeath(enemy, 50);
+            enemyDeath(hitBox, 50);  // Pass hitbox instead of enemy
         });
     }
 }
