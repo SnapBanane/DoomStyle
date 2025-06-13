@@ -65,14 +65,11 @@ export async function startGame() {
     camera.minZ = 0.01;
     camera.maxZ = 10000;
 
-    GUI(scene);
-
     // Init Health Engine
     player.health = 100;
+    window.player = player
 
-    window.player = player; // Expose player globally for console access
-
-    damagePlayer(40);
+    damagePlayer(40); // DEMO CALL DO NOT KEEP IN PRODUCTION CODE
 
     initEnemies(scene);
 

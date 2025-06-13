@@ -16,11 +16,27 @@ const GUI = (scene) => {
     healthBarContainer.top = -20;
     advancedTexture.addControl(healthBarContainer);
 
-    const healthBar = new BABYLON.GUI.Rectangle();
-    healthBar.width = "100%";
-    healthBar.height = "100%";
-    healthBar.background = "green";
-    healthBarContainer.addControl(healthBar);
+    // Red background bar (full width)
+    const healthBarRed = new BABYLON.GUI.Rectangle();
+    healthBarRed.width = "100%";
+    healthBarRed.height = "100%";
+    healthBarRed.background = "red";
+    healthBarRed.thickness = 0;
+    healthBarContainer.addControl(healthBarRed);
+
+    // Green foreground bar (scales with health)
+    const healthBarGreen = new BABYLON.GUI.Rectangle();
+    healthBarGreen.width = "100%";
+    healthBarGreen.height = "100%";
+    healthBarGreen.background = "limegreen";
+    healthBarGreen.thickness = 0;
+    healthBarGreen.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    healthBarContainer.addControl(healthBarGreen);
+
+    updateHealth = function (value) {
+        const percent = Math.max(0, Math.min(100, value));
+        healthBarGreen.width = percent + "%";
+    };
 
     // Crosshair
     function createCrosshairLine(width, height, x, y) {
