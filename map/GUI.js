@@ -109,9 +109,23 @@ function damagePlayer(amount) {
     updateHealth(window.player.health);
     if (window.player.health <= 0) {
         console.log("damagePlayer: Player died.");
-        alert("You died");
+
+        onPlayerDeathAlert(() => {
+            // Reset and reinitiate the game
+            if (window.location && window.location.reload) {
+                window.location.reload();
+            } else if (typeof startGame === "function") {
+                startGame();
+            }
+        });
     }
 }
 
-export { GUI, switchFrame, updateHealth, damagePlayer};
+function onPlayerDeathAlert(callback) {
+    if (typeof callback === "function") {
+        callback();
+    }
+}
+
+export { GUI, switchFrame, updateHealth, damagePlayer, onPlayerDeathAlert };
 
