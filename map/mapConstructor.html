@@ -150,12 +150,12 @@
           color: l.color || "#222222",
         }));
         ramps = wallData.ramps || [];
-        enemies = (wallData.enemies || []).map(e => ({
+        enemies = (wallData.enemies || []).map((e) => ({
           ...e,
-          id: typeof e.id === "number" ? e.id : enemyIdCounter++
+          id: typeof e.id === "number" ? e.id : enemyIdCounter++,
         }));
         // Set enemyIdCounter to max existing id + 1
-        enemyIdCounter = Math.max(1, ...enemies.map(e => e.id || 0)) + 1;
+        enemyIdCounter = Math.max(1, ...enemies.map((e) => e.id || 0)) + 1;
 
         // Assign door ids if missing, and set doorIdCounter
         doorIdCounter = 1;
@@ -410,8 +410,14 @@
               [aIdx, bIdx] = wall.points;
               type = wall.type || "wall";
             }
-            const [ax, ay] = worldToScreen(layer.points[aIdx][0], layer.points[aIdx][1]);
-            const [bx, by] = worldToScreen(layer.points[bIdx][0], layer.points[bIdx][1]);
+            const [ax, ay] = worldToScreen(
+              layer.points[aIdx][0],
+              layer.points[aIdx][1],
+            );
+            const [bx, by] = worldToScreen(
+              layer.points[bIdx][0],
+              layer.points[bIdx][1],
+            );
             ctx.strokeStyle =
               type === "door"
                 ? "#00f"
@@ -425,7 +431,8 @@
 
             // Draw door ID at the midpoint
             if (type === "door" && wall.id !== undefined) {
-              const mx = (ax + bx) / 2, my = (ay + by) / 2;
+              const mx = (ax + bx) / 2,
+                my = (ay + by) / 2;
               ctx.save();
               ctx.globalAlpha = 1;
               ctx.fillStyle = "#ff0";
@@ -438,7 +445,10 @@
           }
           // Points
           for (let i = 0; i < layer.points.length; i++) {
-            const [x, y] = worldToScreen(layer.points[i][0], layer.points[i][1]);
+            const [x, y] = worldToScreen(
+              layer.points[i][0],
+              layer.points[i][1],
+            );
             ctx.fillStyle =
               l === currentLayer && i === selectedPoint ? "#0f0" : "#fff";
             ctx.beginPath();
@@ -616,7 +626,7 @@
               x: enemyPreview.x,
               y: enemyPreview.y,
               type: enemyType,
-              id: enemyIdCounter++ // Assign unique ID
+              id: enemyIdCounter++, // Assign unique ID
             });
             enemyPreview = null;
             draw();
@@ -887,7 +897,7 @@
         return {
           layers: layers.map((l) => ({
             points: l.points,
-            walls: l.walls.map(wall => {
+            walls: l.walls.map((wall) => {
               // Remove any 'rooms' property from doors or walls (legacy)
               if (wall && typeof wall === "object" && "rooms" in wall) {
                 const { rooms, ...rest } = wall;
