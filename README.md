@@ -59,7 +59,7 @@ chmod +x boot.sh # for permissions
 
 ## Project Statistics
 
-You can generate up-to-date stats with:
+You can generate up-to-date stats with: (only works on windows though)
 
 ```powershell
 .\stats.ps1
