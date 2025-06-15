@@ -24,8 +24,7 @@ Do not use any part of this project for malicious purposes.
 
 ## Preview
 
-![Editor Screenshot](preview.png)  
-*(Add your own screenshots or GIFs here!)*
+![Editor Screenshot](img/screenshots/editor.png)  
 
 ## Installation
 
