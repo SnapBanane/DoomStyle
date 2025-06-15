@@ -1,6 +1,6 @@
 import { enemyDeath } from "./enemyDeath.js";
 import { rayCastShootFromEnemy } from "./shootingFromEnemy.js";
-import { createTurretGun } from "../models/railgun/GunModel.js";
+import { createTurretGun } from "../models/enemy-1/GunModel.js";
 
 export function aiForEnemy1(scene, x, y, z, id) {
   const player = scene.getMeshByName("player");
