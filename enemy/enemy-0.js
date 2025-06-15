@@ -5,6 +5,7 @@ export function aiForEnemy0(scene, x, y, z) {
     const player = scene.getMeshByName("player");
     console.log("aiForEnemy0 called");
 
+    // Create the enemy mesh
     const enemy = BABYLON.MeshBuilder.CreateBox("enemy", { width: 1, height: 1, depth: 1 }, scene);
         enemy.position = new BABYLON.Vector3(x, y, z);
         enemy.physicsBody = new BABYLON.PhysicsAggregate(
@@ -15,7 +16,7 @@ export function aiForEnemy0(scene, x, y, z) {
         );
 
     let lastDamageTime = 0;
-    const damageCooldown = 500; // 500ms between hits
+    const damageCooldown = 500;
 
     scene.onBeforeRenderObservable.add(() => {
         const direction = player.position.subtract(enemy.position).normalize();
@@ -35,7 +36,7 @@ export function aiForEnemy0(scene, x, y, z) {
 
         // Ray check for player contact
         const rayOrigin = enemy.position;
-        const rayLength = 1.2; // Detection range
+        const rayLength = 1.2;
         const ray = new BABYLON.Ray(rayOrigin, direction, rayLength);
 
         const hit = scene.pickWithRay(ray, mesh => mesh.name === "player");
@@ -51,7 +52,6 @@ export function aiForEnemy0(scene, x, y, z) {
     });
 
     if (player && enemy) {
-        // Add rotation control
         enemy.isRotating = true;
         enemy.rotation = new BABYLON.Vector3(0, 0, 0);
 
@@ -73,7 +73,7 @@ export function aiForEnemy0(scene, x, y, z) {
 
             // Ray check for player contact
             const rayOrigin = enemy.position;
-            const rayLength = 1.2; // Detection range
+            const rayLength = 1.2;
             const ray = new BABYLON.Ray(rayOrigin, direction, rayLength);
 
             const hit = scene.pickWithRay(ray, mesh => mesh.name === "player");

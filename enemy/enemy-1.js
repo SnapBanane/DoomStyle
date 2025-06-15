@@ -9,9 +9,9 @@ export function aiForEnemy1(scene, x, y, z) {
     const gun = createTurretGun(scene);
     const enemy = gun.root;
     enemy.name = "enemy";
-    enemy.position = new BABYLON.Vector3(x, y + 0.15, z); // Adjusted position since there's no stand
+    enemy.position = new BABYLON.Vector3(x, y + 0.15, z);
     enemy.scaling = new BABYLON.Vector3(1, 1, 1);
-    enemy.isPickable = true; // Make sure the enemy is pickable
+    enemy.isPickable = true;
 
     // Create a hitbox mesh for the enemy that covers the entire turret
     const hitBox = BABYLON.MeshBuilder.CreateBox("enemyHitbox", {
@@ -25,7 +25,7 @@ export function aiForEnemy1(scene, x, y, z) {
     hitBox.isPickable = true;
 
     // Setup health system
-    hitBox.health = 50;  // Set health on hitbox
+    hitBox.health = 50;
     hitBox.isHit = false;
     
     // Make the hitbox handle hits directly
@@ -44,27 +44,28 @@ export function aiForEnemy1(scene, x, y, z) {
     // Add physics to the hitbox
     enemy.physicsBody = new BABYLON.PhysicsAggregate(
         hitBox,
-        BABYLON.PhysicsShapeType.BOX,  // Using BOX instead of CONVEX_HULL for better performance
+        BABYLON.PhysicsShapeType.BOX,
         { mass: 0, restitution: 0.2, friction: 1 },
         scene
     );
 
     if (player && enemy) {
         let lastRotation = new BABYLON.Vector3(0, 0, 0);
-        let timeAccumulator = Math.random() * 2000; // Add random offset to start
+        let timeAccumulator = Math.random() * 2000
         let returnStartTime = 0;
         let returnStartRotation = null;
-        const returnDuration = 100; // Time in ms to return to tracking position
+        const returnDuration = 100;
 
-        const rotationOnDuration = 3000;    // 3 seconds rotating
-        const rotationOffDuration = 500;   // 0.5 second frozen
+        // Define the rotation cycle durations
+        const rotationOnDuration = 3000;
+        const rotationOffDuration = 500;
         const cycleDuration = rotationOnDuration + rotationOffDuration;
 
         let lastFrameTime = performance.now();
         let midFreezeCalled = false;
 
         enemy.aiObserver = scene.onBeforeRenderObservable.add(() => {
-            if (hitBox.health <= 0) {  // Check hitbox health instead of enemy
+            if (hitBox.health <= 0) {
                 scene.onBeforeRenderObservable.remove(enemy.aiObserver);
                 return;
             }
@@ -82,10 +83,10 @@ export function aiForEnemy1(scene, x, y, z) {
             if (isRotating) {
                 const direction = player.position.subtract(enemy.position).normalize();
                 const yaw = Math.atan2(direction.x, direction.z);
-                const pitch = Math.asin(direction.y);  // Calculate pitch based on height difference
-                const rot = new BABYLON.Vector3(-pitch, yaw, 0);  // Apply both pitch and yaw
+                const pitch = Math.asin(direction.y);
+                const rot = new BABYLON.Vector3(-pitch, yaw, 0);
                 lastRotation = rot.clone();
-                returnStartRotation = null; // Reset return animation
+                returnStartRotation = null;
 
                 gun.gunPivot.rotation = rot;
 
