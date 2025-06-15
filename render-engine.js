@@ -1,6 +1,5 @@
-import { renderMenu } from './menu.js';
+import { renderMenu } from "./menu.js";
 
-
-window.addEventListener('DOMContentLoaded', async function () {
-    renderMenu();
+window.addEventListener("DOMContentLoaded", async function () {
+  renderMenu();
 });
