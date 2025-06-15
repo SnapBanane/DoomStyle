@@ -4,13 +4,16 @@ import { allEnemyMeshes, allDoorMeshes } from "../init.js";
  * Point-in-polygon test for 2D arrays.
  */
 function isPointInPolygon(point, polygon) {
-  let x = point[0], y = point[1];
+  let x = point[0],
+    y = point[1];
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    let xi = polygon[i][0], yi = polygon[i][1];
-    let xj = polygon[j][0], yj = polygon[j][1];
-    let intersect = ((yi > y) !== (yj > y)) &&
-      (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-10) + xi);
+    let xi = polygon[i][0],
+      yi = polygon[i][1];
+    let xj = polygon[j][0],
+      yj = polygon[j][1];
+    let intersect =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-10) + xi;
     if (intersect) inside = !inside;
   }
   return inside;
@@ -67,50 +70,53 @@ export function extractWallSegments(mapData) {
   return allWalls;
 }
 
-// Helper: get polygon points in order (fallback to convex hull)
-function getPolygonPoints(points, walls) {
-  if (points.length < 3) return [];
-  if (!walls || walls.length < 3) return [];
-
-  // Build adjacency list
+function getAllClosedPolygons(points, walls) {
   const adj = {};
+
+  // Create adjacency list from wall definitions
   for (const wall of walls) {
-    let a, b;
-    if (Array.isArray(wall)) {
-      [a, b] = wall;
-    } else if (wall && wall.points) {
-      [a, b] = wall.points;
-    } else {
-      continue;
-    }
+    const [a, b] = wall.points;
     if (!adj[a]) adj[a] = [];
     if (!adj[b]) adj[b] = [];
     adj[a].push(b);
     adj[b].push(a);
   }
-  let start;
-  if (Array.isArray(walls[0])) {
-    start = walls[0][0];
-  } else if (walls[0] && walls[0].points) {
-    start = walls[0].points[0];
-  } else {
-    return [];
+
+  const visited = new Set();
+  const polygons = [];
+
+  // Try to trace a loop from each point
+  for (let start = 0; start < points.length; start++) {
+    if (visited.has(start) || !adj[start]) continue;
+
+    const loop = [];
+    let curr = start;
+    let prev = null;
+
+    while (true) {
+      loop.push(curr);
+      visited.add(curr);
+
+      const nextCandidates = adj[curr].filter(n => n !== prev);
+      if (nextCandidates.length === 0) break;
+
+      const next = nextCandidates[0];
+
+      if (next === start && loop.length >= 3) {
+        polygons.push(loop.map(i => points[i]));
+        break;
+      }
+
+      if (loop.includes(next)) break; // infinite loop prevention
+
+      prev = curr;
+      curr = next;
+    }
   }
-  const poly = [start];
-  let prev = null,
-    curr = start;
-  while (true) {
-    const nexts = adj[curr].filter((n) => n !== prev);
-    if (nexts.length === 0) break;
-    const next = nexts[0];
-    if (next === start) break;
-    poly.push(next);
-    prev = curr;
-    curr = next;
-    if (poly.length > points.length + 2) break;
-  }
-  return poly.map((i) => points[i]);
+
+  return polygons;
 }
+
 
 // Convex hull (Graham scan)
 function convexHull(points) {
@@ -155,29 +161,29 @@ function createRampMesh(scene, x, y, z, width, height, depth, angle) {
     // Bottom face
     -halfW,
     y,
-    -halfD, // 0: left, bottom, back
+    -halfD,
     halfW,
     y,
-    -halfD, // 1: right, bottom, back
+    -halfD,
     halfW,
     y,
-    halfD, // 2: right, bottom, front
+    halfD,
     -halfW,
     y,
-    halfD, // 3: left, bottom, front
+    halfD,
     // Top face (sloped)
     -halfW,
     y + height,
-    -halfD, // 4: left, top, back
+    -halfD,
     halfW,
     y + height,
-    -halfD, // 5: right, top, back
+    -halfD,
     halfW,
     y,
-    halfD, // 6: right, low, front (same as bottom)
+    halfD,
     -halfW,
     y,
-    halfD, // 7: left, low, front (same as bottom)
+    halfD,
   ];
 
   // Indices for faces
@@ -219,110 +225,7 @@ function createRampMesh(scene, x, y, z, width, height, depth, angle) {
 }
 
 /**
- * Builds a floor mesh with optional holes using Babylon.js ExtrudePolygon.
- * @param {BABYLON.Scene} scene
- * @param {Array} outerPolygon - Array of [x, z] points.
- * @param {Array<Array>} holes - Array of polygons (each an array of [x, z] points).
- * @param {number} y - Height.
- * @param {string} color - Hex color.
- * @param {number} thickness - Floor thickness.
- * @returns {BABYLON.Mesh}
- */
-function createFloorWithHoles(scene, outerPolygon, holes, y, color, thickness = 1) {
-  const shape = outerPolygon.map(([x, z]) => new BABYLON.Vector2(x, z));
-  const holesVec = (holes || []).map(
-    hole => hole.map(([x, z]) => new BABYLON.Vector2(x, z))
-  );
-  const mesh = BABYLON.MeshBuilder.ExtrudePolygon(
-    "floor",
-    {
-      shape: shape,
-      holes: holesVec,
-      depth: thickness,
-      sideOrientation: BABYLON.Mesh.DOUBLESIDE
-    },
-    scene
-  );
-  mesh.position.y = y;
-  const mat = new BABYLON.StandardMaterial("floorMat", scene);
-  if (color && color.startsWith("#")) {
-    const r = parseInt(color.substr(1, 2), 16) / 255;
-    const g = parseInt(color.substr(3, 2), 16) / 255;
-    const b = parseInt(color.substr(5, 2), 16) / 255;
-    mat.diffuseColor = new BABYLON.Color3(r, g, b);
-  }
-  mat.backFaceCulling = false;
-  mesh.material = mat;
-  return mesh;
-}
-
-/**
- * Finds all simple closed polygons (loops) in a layer's walls (treating doors as walls).
- * Returns an array of polygons, each as an array of [x, y] points.
- */
-function findAllClosedPolygons(points, walls) {
-  // Build adjacency list
-  const adj = {};
-  for (const wall of walls) {
-    if (!wall || !wall.points) continue;
-    let [a, b] = wall.points;
-    if (!adj[a]) adj[a] = [];
-    if (!adj[b]) adj[b] = [];
-    adj[a].push(b);
-    adj[b].push(a);
-  }
-
-  const visitedEdges = new Set();
-  const polygons = [];
-
-  function edgeKey(a, b) {
-    return a < b ? `${a},${b}` : `${b},${a}`;
-  }
-
-  // Helper: walk a polygon loop starting from edge (start, next)
-  function walkPolygon(start, next) {
-    const poly = [start, next];
-    let prev = start;
-    let curr = next;
-    while (true) {
-      const neighbors = adj[curr].filter(n => n !== prev);
-      if (neighbors.length === 0) return null;
-      const next2 = neighbors[0];
-      if (next2 === start) {
-        return poly;
-      }
-      if (poly.includes(next2)) return null; // not a simple loop
-      poly.push(next2);
-      prev = curr;
-      curr = next2;
-    }
-  }
-
-  // Try every edge as a starting edge
-  for (let a = 0; a < points.length; a++) {
-    if (!adj[a]) continue;
-    for (const b of adj[a]) {
-      const key = edgeKey(a, b);
-      if (visitedEdges.has(key)) continue;
-      const poly = walkPolygon(a, b);
-      if (poly && poly.length >= 3) {
-        // Mark all edges as visited
-        for (let i = 0; i < poly.length; i++) {
-          const k = edgeKey(poly[i], poly[(i + 1) % poly.length]);
-          visitedEdges.add(k);
-        }
-        // Avoid duplicates (by point indices)
-        if (!polygons.some(p => p.length === poly.length && p.every((v, i) => v === poly[i]))) {
-          polygons.push(poly.map(i => points[i]));
-        }
-      }
-    }
-  }
-  return polygons;
-}
-
-/**
- * Builds all layers' walls, ramps, and floors (with holes) in Babylon.js.
+ * Builds all layers' walls, ramps, and floors (as big planes) in Babylon.js.
  * @param {BABYLON.Scene} scene
  * @param {Object} mapData - The map data object.
  * @param {Object} [options] - {layerHeight, wallHeight, wallThickness}
@@ -353,17 +256,14 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
       const p1 = layer.points[a];
       const p2 = layer.points[b];
 
-      // Choose material based on type
-      let wallMat;
+      // Material: wall = #999999 (gray)
+      let wallMat = new BABYLON.StandardMaterial("wallMat", scene);
       if (type === "door") {
-        wallMat = new BABYLON.StandardMaterial("doorMat", scene);
         wallMat.diffuseColor = new BABYLON.Color3(1, 0, 0); // Red for doors
-        wallMat.backFaceCulling = false;
       } else {
-        wallMat = new BABYLON.StandardMaterial("wallMat", scene);
-        wallMat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
-        wallMat.backFaceCulling = false;
+        wallMat.diffuseColor = BABYLON.Color3.FromHexString("#999999");
       }
+      wallMat.backFaceCulling = false;
 
       const dx = p2[0] - p1[0];
       const dz = p2[1] - p1[1];
@@ -418,99 +318,70 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
     }
   }
 
-  // --- Render floors as convex shapes, supporting multiple disconnected areas and holes ---
   const floorThickness = 0.1 * gridSize;
   mapData.layers.forEach((layer, i) => {
-    if (i === 0 || !layer.points || !layer.walls) return; // Skip the most bottom layer
-    // Find all closed polygons in this layer (treating doors as walls)
-    const polygons = findAllClosedPolygons(layer.points, layer.walls);
+    if (i === 0 || !layer.points || !layer.walls) {
+      console.log(`Skipping layer ${i} due to missing data.`);
+      return;
+    }
+    if (layer.floorEnabled === false) {
+      console.log(`Skipping layer ${i} because floor is disabled.`);
+      return;
+    }
 
-    // Prepare holes (array of arrays of [x, z])
-    const holes = (layer.holes || []).map(holeIdxs => holeIdxs.map(idx => layer.points[idx]));
+    console.log(`Processing layer ${i}...`);
 
-    for (const poly2d of polygons) {
-      // Find holes inside this polygon
-      const holesInThis = holes.filter(hole =>
-        hole.length > 0 && isPointInPolygon(hole[0], poly2d)
-      );
-      if (poly2d && poly2d.length >= 3) {
-        const y = i * layerHeight + wallHeight - wallHeight - floorThickness / 2;
-        const mesh = createFloorWithHoles(
+    const polygons = getAllClosedPolygons(layer.points, layer.walls);
+    console.log(`Found ${polygons.length} closed polygons on layer ${i}.`);
+
+    for (let j = 0; j < polygons.length; j++) {
+      let poly = polygons[j];
+      console.log(`Polygon ${j} has ${poly.length} points:`, poly);
+
+      if (poly.length < 3) {
+        console.log(`Polygon ${j} skipped: less than 3 points.`);
+        continue;
+      }
+
+      if (
+        poly.length > 1 &&
+        poly[0][0] === poly[poly.length - 1][0] &&
+        poly[0][1] === poly[poly.length - 1][1]
+      ) {
+        poly = poly.slice(0, -1);
+        console.log(`Polygon ${j} had duplicate end point removed.`);
+      }
+
+      poly = ensureWinding(poly, true);
+      const outerVec2 = toVector2Array(poly);
+      console.log(`Polygon ${j} after CCW winding:`, outerVec2);
+
+      try {
+        const polygonBuilder = new BABYLON.PolygonMeshBuilder(
+          `floor_${i}_${meshes.length}`,
+          outerVec2,
           scene,
-          poly2d,
-          holesInThis,
-          y,
-          layer.color,
-          floorThickness
         );
-        if (mesh) {
-          mesh.material.backFaceCulling = false;
-          meshes.push(mesh);
-        }
+        const floorMesh = polygonBuilder.build(false, floorThickness);
+        floorMesh.position.y = i * layerHeight + 0.05;
+
+        const floorMat = new BABYLON.StandardMaterial("floorMat", scene);
+        floorMat.diffuseColor = BABYLON.Color3.FromHexString("#555555");
+        floorMat.backFaceCulling = false;
+        floorMesh.material = floorMat;
+
+        meshes.push(floorMesh);
+        console.log(`Polygon ${j} successfully created as floor mesh.`);
+      } catch (e) {
+        console.warn(
+          `Failed to build floor for polygon ${j} on layer ${i}:`,
+          e,
+        );
       }
     }
   });
 
   return meshes;
-}
-
-// Now with scaling!
-function createConvexFloor(scene, points, y, color, thickness = 1, scale = 1) {
-  // points: [[x, z], ...] in order (convex)
-  if (points.length < 3) return null;
-  const positions = [];
-  const indices = [];
-
-  // Top and bottom vertices
-  for (const [x, z] of points) {
-    positions.push(x * scale, y + thickness / 2, z * scale); // top
-  }
-  for (const [x, z] of points) {
-    positions.push(x * scale, y - thickness / 2, z * scale); // bottom
-  }
-
-  const n = points.length;
-
-  // Top face (fan from first top vertex)
-  for (let i = 1; i < n - 1; i++) {
-    indices.push(0, i, i + 1);
-  }
-  // Bottom face (fan, reversed winding)
-  for (let i = 1; i < n - 1; i++) {
-    indices.push(n, n + i + 1, n + i);
-  }
-  // Side faces
-  for (let i = 0; i < n; i++) {
-    const next = (i + 1) % n;
-    // 4 vertices per quad: top[i], top[next], bottom[next], bottom[i]
-    const ti = i;
-    const tnext = next;
-    const bi = n + i;
-    const bnext = n + next;
-    // Two triangles per quad
-    indices.push(ti, tnext, bnext);
-    indices.push(ti, bnext, bi);
-  }
-
-  const vertexData = new BABYLON.VertexData();
-  vertexData.positions = positions;
-  vertexData.indices = indices;
-  vertexData.normals = [];
-  BABYLON.VertexData.ComputeNormals(positions, indices, vertexData.normals);
-
-  const mesh = new BABYLON.Mesh("convexFloor", scene);
-  vertexData.applyToMesh(mesh);
-
-  const mat = new BABYLON.StandardMaterial("floorMat", scene);
-  if (color && color.startsWith("#")) {
-    const r = parseInt(color.substr(1, 2), 16) / 255;
-    const g = parseInt(color.substr(3, 2), 16) / 255;
-    const b = parseInt(color.substr(5, 2), 16) / 255;
-    mat.diffuseColor = new BABYLON.Color3(r, g, b);
-  }
-  mat.backFaceCulling = false;
-  mesh.material = mat;
-  return mesh;
 }
 
 /**
@@ -564,4 +435,74 @@ export function buildEnemyMap(scene, mapData, options = {}) {
       allEnemyMeshes.push(mesh);
     }
   }
+}
+
+// Helper: Convert array of [x, y] to array of BABYLON.Vector2
+function toVector2Array(points) {
+  return points.map(([x, y]) => new BABYLON.Vector2(x, y));
+}
+
+// Returns positive for CCW, negative for CW
+function polygonArea2D(points) {
+  let area = 0;
+  for (let i = 0, n = points.length; i < n; i++) {
+    const [x0, y0] = points[i];
+    const [x1, y1] = points[(i + 1) % n];
+    area += x0 * y1 - x1 * y0;
+  }
+  return area / 2;
+}
+
+function ensureWinding(points, ccw = true) {
+  if (points.length < 3) return points;
+  const area = polygonArea2D(points);
+  if ((ccw && area < 0) || (!ccw && area > 0)) {
+    return points.slice().reverse();
+  }
+  return points;
+}
+
+function removeDuplicateConsecutivePoints(points) {
+  if (points.length < 2) return points;
+  const out = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    if (
+      points[i][0] !== points[i - 1][0] ||
+      points[i][1] !== points[i - 1][1]
+    ) {
+      out.push(points[i]);
+    }
+  }
+  // Remove last point if it equals the first
+  if (
+    out.length > 2 &&
+    out[0][0] === out[out.length - 1][0] &&
+    out[0][1] === out[out.length - 1][1]
+  ) {
+    out.pop();
+  }
+  return out;
+}
+
+function createPolygonMesh(points, height, scene) {
+  const positions = points.flatMap((p) => [p.x, height, p.z]);
+
+  const indices = [];
+  const triangles = earcut(positions, null, 3);
+  for (let i = 0; i < triangles.length; i += 3) {
+    indices.push(triangles[i], triangles[i + 1], triangles[i + 2]);
+  }
+
+  const mesh = new BABYLON.Mesh("floor", scene);
+  const vertexData = new BABYLON.VertexData();
+  vertexData.positions = positions;
+  vertexData.indices = indices;
+  BABYLON.VertexData.ComputeNormals(
+    vertexData.positions,
+    vertexData.indices,
+    (vertexData.normals = []),
+  );
+  vertexData.applyToMesh(mesh);
+
+  return mesh;
 }

@@ -109,9 +109,6 @@ export async function startGame() {
 
   await resetAllEnemiesAlive(scene);
 
-  console.log("[DEBUG] allEnemyMeshes:", allEnemyMeshes);
-  console.log("[DEBUG] allDoorMeshes:", allDoorMeshes);
-
   // Register a render loop to repeatedly render the scene
   engine.runRenderLoop(function () {
     scene.render();

@@ -74,6 +74,19 @@
         margin-left: 4px;
         vertical-align: middle;
       }
+      .hole-btn {
+        margin-top: 6px;
+        background: #933;
+        color: #fff;
+        border: 1px solid #a55;
+        border-radius: 4px;
+        padding: 2px 8px;
+        cursor: pointer;
+      }
+      .hole-btn.active {
+        background: #f33;
+        color: #fff;
+      }
     </style>
   </head>
   <body>
@@ -94,32 +107,36 @@
       <button id="enemySpawnerBtn" class="ramp-btn">Enemy Spawner</button>
       <span id="enemyTypeLabel"></span>
       <button id="doorModeBtn">Door Mode: OFF</button>
+      <button id="holeModeBtn" class="hole-btn">Hole Tool</button>
     </div>
     <script type="module">
       import { fetchWallData, saveWallData } from "./mapConstructor.js";
 
       // --- Data Structures ---
       let layers = [];
-      let ramps = []; // {layer, x, y, angle}
+      let ramps = [];
       let currentLayer = 0;
       let rampMode = false;
       let rampPreview = null;
       let enemySpawnerMode = false;
       let enemyPreview = null;
-      let enemyType = 1; // 1 or 2
-      let enemies = []; // {layer, x, y, type, id}
+      let enemyType = 1;
+      let enemies = [];
       let placingDoor = false;
+      let holeMode = false;
+      let holePreview = null; // {points: [indices]}
+      let selectedHolePoint = null;
 
       // Unique ID counters
       let enemyIdCounter = 1;
       let doorIdCounter = 1;
 
-      // Each layer: { points: [[x,y],...], walls: [[a,b],...], color: "#hex" }
+      // Each layer: { points: [[x,y],...], walls: [[a,b],...], color: "#hex", holes: [[i0,i1,i2,...], ...] }
       function createLayer(color = "#222222") {
-        return { points: [], walls: [], color };
+        return { points: [], walls: [], color, holes: [] };
       }
 
-      // --- Load initial data (single layer for backward compatibility) ---
+      // --- Load initial data (add holes property if missing) ---
       let wallData = await fetchWallData();
       if (wallData && wallData.length && !wallData.layers) {
         // Assume single layer import
@@ -148,6 +165,7 @@
           points: l.points,
           walls: l.walls,
           color: l.color || "#222222",
+          holes: l.holes || [],
         }));
         ramps = wallData.ramps || [];
         enemies = (wallData.enemies || []).map((e) => ({
@@ -176,6 +194,10 @@
         enemies = [];
         enemyIdCounter = 1;
         doorIdCounter = 1;
+      }
+      // Ensure holes property exists
+      for (const layer of layers) {
+        if (!layer.holes) layer.holes = [];
       }
 
       // Convert walls to new format (if necessary)
@@ -301,6 +323,46 @@
             ctx.fill("evenodd");
             ctx.restore();
           }
+
+          // --- Draw holes for this layer ---
+          for (const hole of layer.holes) {
+            if (hole.length < 3) continue;
+            ctx.save();
+            ctx.globalAlpha = l === currentLayer ? 0.25 : 0.10;
+            ctx.fillStyle = "#ff3333";
+            ctx.beginPath();
+            for (let i = 0; i < hole.length; i++) {
+              const [x, y] = worldToScreen(
+                layer.points[hole[i]][0],
+                layer.points[hole[i]][1]
+              );
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill("evenodd");
+            ctx.restore();
+          }
+        }
+
+        // --- Draw hole preview (if any) ---
+        if (holePreview && holePreview.points.length > 0) {
+          ctx.save();
+          ctx.globalAlpha = 0.5;
+          ctx.strokeStyle = "#f33";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let i = 0; i < holePreview.points.length; i++) {
+            const idx = holePreview.points[i];
+            const [x, y] = worldToScreen(
+              layers[currentLayer].points[idx][0],
+              layers[currentLayer].points[idx][1]
+            );
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+          ctx.restore();
         }
 
         // Draw placed ramps (as blue squares)
@@ -730,6 +792,23 @@
         this.textContent = "Door Mode: " + (placingDoor ? "ON" : "OFF");
       };
 
+      // --- Hole Tool UI ---
+      document.getElementById("holeModeBtn").onclick = function () {
+        holeMode = !holeMode;
+        holePreview = null;
+        this.classList.toggle("active", holeMode);
+        // Deactivate ramp/enemy modes if hole mode is activated
+        if (holeMode) {
+          rampMode = false;
+          enemySpawnerMode = false;
+          document.getElementById("rampModeBtn").classList.remove("active");
+          document.getElementById("enemySpawnerBtn").classList.remove("active");
+          rampPreview = null;
+          enemyPreview = null;
+        }
+        draw();
+      };
+
       // --- Mouse Events ---
       canvas.addEventListener("mousedown", (e) => {
         if (e.button === 1) {
@@ -765,6 +844,47 @@
             y: ey,
             type: enemyType,
           };
+          draw();
+          return;
+        }
+
+        // Hole mode: place hole preview
+        if (holeMode) {
+          const hx = Math.round(wx / gridSize) * gridSize + gridSize / 2;
+          const hy = Math.round(wy / gridSize) * gridSize + gridSize / 2;
+          // Find nearest point
+          let nearestIdx = -1;
+          let minDist = 16;
+          for (let i = 0; i < layers[currentLayer].points.length; i++) {
+            const [x, y] = layers[currentLayer].points[i];
+            const dist = Math.hypot(x - wx, y - wy);
+            if (dist < minDist) {
+              minDist = dist;
+              nearestIdx = i;
+            }
+          }
+          if (nearestIdx === -1) return; // Must click near a point
+
+          if (!holePreview) {
+            holePreview = { points: [nearestIdx] };
+          } else {
+            // If clicked first point again and at least 3 points, close the hole
+            if (
+              nearestIdx === holePreview.points[0] &&
+              holePreview.points.length >= 3
+            ) {
+              // Add hole polygon
+              pushUndo();
+              layers[currentLayer].holes.push([...holePreview.points]);
+              holePreview = null;
+              draw();
+              return;
+            }
+            // Prevent duplicate points except for closing
+            if (!holePreview.points.includes(nearestIdx)) {
+              holePreview.points.push(nearestIdx);
+            }
+          }
           draw();
           return;
         }
@@ -906,6 +1026,7 @@
               return wall;
             }),
             color: l.color,
+            holes: l.holes || [],
           })),
           ramps,
           enemies,
@@ -938,6 +1059,39 @@
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.restore();
+      }
+
+      // --- Remove hole on right click (when in hole mode) ---
+      canvas.addEventListener("mousedown", (e) => {
+        if (holeMode && e.button === 2) {
+          const [wx, wy] = screenToWorld(e.clientX, e.clientY);
+          // Find hole polygon under mouse
+          const layer = layers[currentLayer];
+          for (let h = 0; h < layer.holes.length; h++) {
+            const poly = layer.holes[h].map((idx) => layer.points[idx]);
+            if (isPointInPolygon([wx, wy], poly)) {
+              pushUndo();
+              layer.holes.splice(h, 1);
+              draw();
+              return;
+            }
+          }
+        }
+      });
+
+      // --- Point-in-polygon helper for hole removal ---
+      function isPointInPolygon(point, polygon) {
+        let x = point[0], y = point[1];
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+          let xi = polygon[i][0], yi = polygon[i][1];
+          let xj = polygon[j][0], yj = polygon[j][1];
+          let intersect =
+            yi > y !== yj > y &&
+            x < ((xj - xi) * (y - yi)) / (yj - yi + 1e-10) + xi;
+          if (intersect) inside = !inside;
+        }
+        return inside;
       }
     </script>
   </body>
