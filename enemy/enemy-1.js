@@ -28,6 +28,15 @@ export function aiForEnemy1(scene, x, y, z, id) {
   hitBox.parent = enemy;
   hitBox.isPickable = true;
 
+  // Assign the map id to a custom property on both meshes
+  if (id !== undefined) {
+    enemy.gameId = id;
+    hitBox.gameId = id;
+  }
+
+  // Optionally, store a reference to the hitbox on the root mesh
+  enemy.hitBox = hitBox;
+
   // Setup health system
   hitBox.health = 50;
   hitBox.isHit = false;
@@ -67,6 +76,8 @@ export function aiForEnemy1(scene, x, y, z, id) {
 
     let lastFrameTime = performance.now();
     let midFreezeCalled = false;
+
+    hitBox.gameId = id; // Assign the provided id to the hitbox
 
     enemy.aiObserver = scene.onBeforeRenderObservable.add(() => {
       if (hitBox.health <= 0) {
@@ -140,6 +151,5 @@ export function aiForEnemy1(scene, x, y, z, id) {
       enemyDeath(hitBox, 50); // Pass hitbox instead of enemy
     });
   }
-
   return enemy;
 }

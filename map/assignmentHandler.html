@@ -1,165 +1,212 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Room Assignment Tool</title>
-  <style>
-    body { font-family: sans-serif; background: #222; color: #fff; margin: 0; padding: 0; }
-    #container { max-width: 900px; margin: 30px auto; background: #333; border-radius: 8px; padding: 24px; }
-    h2 { margin-top: 0; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 24px; }
-    th, td { border: 1px solid #444; padding: 6px 10px; text-align: left; }
-    th { background: #222; }
-    tr.selected { background: #444; }
-    input[type="text"] { width: 80px; }
-    .btn { background: #0af; color: #fff; border: none; border-radius: 4px; padding: 4px 12px; cursor: pointer; }
-    .btn:disabled { background: #555; }
-    .status-alive { color: #0f0; font-weight: bold; }
-    .status-dead { color: #f44; font-weight: bold; }
-    #debugConsole {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: 420px;
-      height: 100vh;
-      background: #181818;
-      color: #fff;
-      font-family: monospace;
-      font-size: 13px;
-      overflow-y: auto;
-      border-left: 2px solid #333;
-      z-index: 1000;
-      padding: 10px 12px 10px 16px;
-      box-sizing: border-box;
-    }
-    #debugConsole h3 {
-      margin: 0 0 8px 0;
-      font-size: 16px;
-      color: #0af;
-      letter-spacing: 1px;
-    }
-    #debugConsole .log-entry {
-      margin-bottom: 8px;
-      border-bottom: 1px solid #222;
-      padding-bottom: 4px;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-    #debugConsole .log-time {
-      color: #0af;
-      font-weight: bold;
-      margin-right: 8px;
-    }
-    #debugConsole .log-type {
-      color: #ff0;
-      font-weight: bold;
-      margin-right: 8px;
-    }
-    #debugConsole .log-error {
-      color: #f44;
-      font-weight: bold;
-    }
-    #debugConsole .log-success {
-      color: #0f0;
-      font-weight: bold;
-    }
-    #debugConsole .log-action {
-      color: #0af;
-      font-weight: bold;
-    }
-    #debugConsole .log-data {
-      color: #fff;
-      margin-left: 18px;
-      display: block;
-    }
-    #debugConsole .log-divider {
-      border-top: 1px solid #333;
-      margin: 8px 0;
-    }
-  </style>
-</head>
-<body>
-  <div id="container">
-    <h2>Room Assignment Tool</h2>
-    <button class="btn" id="saveBtn" disabled>Save JSON (Server)</button>
-    <span id="statusMsg"></span>
-    <hr />
-    <h3>Enemies</h3>
-    <table id="enemyTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Type</th>
-          <th>Layer</th>
-          <th>Room</th>
-          <th>Set Room</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <h3>Doors</h3>
-    <table id="doorTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Layer</th>
-          <th>Room</th>
-          <th>Set Room</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div id="debugConsole">
-    <h3>Debug Console</h3>
-    <div id="debugLog"></div>
-  </div>
-  <script type="module">
-    let mapData = null;
-
-    // --- Debug Console ---
-    function logDebug(type, message, data = null, status = "") {
-      const logDiv = document.getElementById("debugLog");
-      const entry = document.createElement("div");
-      entry.className = "log-entry";
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('de-DE', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
-      let typeClass = "log-type";
-      if (type === "ERROR") typeClass += " log-error";
-      if (type === "SUCCESS") typeClass += " log-success";
-      if (type === "ACTION") typeClass += " log-action";
-      entry.innerHTML = `<span class="log-time">${timeStr}</span><span class="${typeClass}">${type}</span>${status ? `<span>[${status}]</span>` : ""} ${message}`;
-      if (data !== null) {
-        entry.innerHTML += `<span class="log-data">${typeof data === "string" ? data : JSON.stringify(data, null, 2)}</span>`;
+  <head>
+    <meta charset="UTF-8" />
+    <title>Room Assignment Tool</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #222;
+        color: #fff;
+        margin: 0;
+        padding: 0;
       }
-      logDiv.appendChild(entry);
-      setTimeout(() => {
+      #container {
+        max-width: 900px;
+        margin: 30px auto;
+        background: #333;
+        border-radius: 8px;
+        padding: 24px;
+      }
+      h2 {
+        margin-top: 0;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 24px;
+      }
+      th,
+      td {
+        border: 1px solid #444;
+        padding: 6px 10px;
+        text-align: left;
+      }
+      th {
+        background: #222;
+      }
+      tr.selected {
+        background: #444;
+      }
+      input[type="text"] {
+        width: 80px;
+      }
+      .btn {
+        background: #0af;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 12px;
+        cursor: pointer;
+      }
+      .btn:disabled {
+        background: #555;
+      }
+      .status-alive {
+        color: #0f0;
+        font-weight: bold;
+      }
+      .status-dead {
+        color: #f44;
+        font-weight: bold;
+      }
+      #debugConsole {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 420px;
+        height: 100vh;
+        background: #181818;
+        color: #fff;
+        font-family: monospace;
+        font-size: 13px;
+        overflow-y: auto;
+        border-left: 2px solid #333;
+        z-index: 1000;
+        padding: 10px 12px 10px 16px;
+        box-sizing: border-box;
+      }
+      #debugConsole h3 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        color: #0af;
+        letter-spacing: 1px;
+      }
+      #debugConsole .log-entry {
+        margin-bottom: 8px;
+        border-bottom: 1px solid #222;
+        padding-bottom: 4px;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      #debugConsole .log-time {
+        color: #0af;
+        font-weight: bold;
+        margin-right: 8px;
+      }
+      #debugConsole .log-type {
+        color: #ff0;
+        font-weight: bold;
+        margin-right: 8px;
+      }
+      #debugConsole .log-error {
+        color: #f44;
+        font-weight: bold;
+      }
+      #debugConsole .log-success {
+        color: #0f0;
+        font-weight: bold;
+      }
+      #debugConsole .log-action {
+        color: #0af;
+        font-weight: bold;
+      }
+      #debugConsole .log-data {
+        color: #fff;
+        margin-left: 18px;
+        display: block;
+      }
+      #debugConsole .log-divider {
+        border-top: 1px solid #333;
+        margin: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <h2>Room Assignment Tool</h2>
+      <button class="btn" id="saveBtn" disabled>Save JSON (Server)</button>
+      <span id="statusMsg"></span>
+      <hr />
+      <h3>Enemies</h3>
+      <table id="enemyTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>Layer</th>
+            <th>Room</th>
+            <th>Set Room</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <h3>Doors</h3>
+      <table id="doorTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Layer</th>
+            <th>Room</th>
+            <th>Set Room</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="debugConsole">
+      <h3>Debug Console</h3>
+      <div id="debugLog"></div>
+    </div>
+    <script type="module">
+      let mapData = null;
+
+      // --- Debug Console ---
+      function logDebug(type, message, data = null, status = "") {
+        const logDiv = document.getElementById("debugLog");
+        const entry = document.createElement("div");
+        entry.className = "log-entry";
+        const now = new Date();
+        const timeStr =
+          now.toLocaleTimeString("de-DE", { hour12: false }) +
+          "." +
+          String(now.getMilliseconds()).padStart(3, "0");
+        let typeClass = "log-type";
+        if (type === "ERROR") typeClass += " log-error";
+        if (type === "SUCCESS") typeClass += " log-success";
+        if (type === "ACTION") typeClass += " log-action";
+        entry.innerHTML = `<span class="log-time">${timeStr}</span><span class="${typeClass}">${type}</span>${status ? `<span>[${status}]</span>` : ""} ${message}`;
+        if (data !== null) {
+          entry.innerHTML += `<span class="log-data">${typeof data === "string" ? data : JSON.stringify(data, null, 2)}</span>`;
+        }
+        logDiv.appendChild(entry);
+        setTimeout(() => {
+          logDiv.scrollTop = logDiv.scrollHeight;
+        }, 0);
+      }
+
+      function logDivider() {
+        const logDiv = document.getElementById("debugLog");
+        const divider = document.createElement("div");
+        divider.className = "log-divider";
+        logDiv.appendChild(divider);
+      }
+
+      function scrollDebugToBottom() {
+        const logDiv = document.getElementById("debugLog");
         logDiv.scrollTop = logDiv.scrollHeight;
-      }, 0);
-    }
+      }
 
-    function logDivider() {
-      const logDiv = document.getElementById("debugLog");
-      const divider = document.createElement("div");
-      divider.className = "log-divider";
-      logDiv.appendChild(divider);
-    }
-
-    function scrollDebugToBottom() {
-      const logDiv = document.getElementById("debugLog");
-      logDiv.scrollTop = logDiv.scrollHeight;
-    }
-
-    // --- Table Rendering ---
-    function renderTables() {
-      logDebug("ACTION", "Rendering tables...");
-      // Enemies
-      const etb = document.querySelector("#enemyTable tbody");
-      etb.innerHTML = "";
-      if (mapData && Array.isArray(mapData.enemies)) {
-        mapData.enemies.forEach((enemy, idx) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
+      // --- Table Rendering ---
+      function renderTables() {
+        logDebug("ACTION", "Rendering tables...");
+        // Enemies
+        const etb = document.querySelector("#enemyTable tbody");
+        etb.innerHTML = "";
+        if (mapData && Array.isArray(mapData.enemies)) {
+          mapData.enemies.forEach((enemy, idx) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
             <td>${enemy.id}</td>
             <td>${enemy.type}</td>
             <td>${enemy.layer ?? ""}</td>
@@ -169,22 +216,22 @@
               <button class="btn setRoomBtn" data-idx="${idx}">Set</button>
             </td>
           `;
-          etb.appendChild(tr);
-        });
-        logDebug("INFO", `Rendered ${mapData.enemies.length} enemies.`);
-      }
-      // Doors
-      const dtb = document.querySelector("#doorTable tbody");
-      dtb.innerHTML = "";
-      let doorCount = 0;
-      if (mapData && Array.isArray(mapData.layers)) {
-        mapData.layers.forEach((layer, layerIdx) => {
-          if (!Array.isArray(layer.walls)) return;
-          layer.walls.forEach((wall, wIdx) => {
-            if (wall.type === "door") {
-              doorCount++;
-              const tr = document.createElement("tr");
-              tr.innerHTML = `
+            etb.appendChild(tr);
+          });
+          logDebug("INFO", `Rendered ${mapData.enemies.length} enemies.`);
+        }
+        // Doors
+        const dtb = document.querySelector("#doorTable tbody");
+        dtb.innerHTML = "";
+        let doorCount = 0;
+        if (mapData && Array.isArray(mapData.layers)) {
+          mapData.layers.forEach((layer, layerIdx) => {
+            if (!Array.isArray(layer.walls)) return;
+            layer.walls.forEach((wall, wIdx) => {
+              if (wall.type === "door") {
+                doorCount++;
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
                 <td>${wall.id ?? ""}</td>
                 <td>${layerIdx}</td>
                 <td>${wall.room ?? ""}</td>
@@ -193,108 +240,132 @@
                   <button class="btn setDoorRoomBtn" data-layer="${layerIdx}" data-widx="${wIdx}">Set</button>
                 </td>
               `;
-              dtb.appendChild(tr);
-            }
+                dtb.appendChild(tr);
+              }
+            });
           });
-        });
-        logDebug("INFO", `Rendered ${doorCount} doors.`);
-      }
-      logDivider();
-      scrollDebugToBottom();
-    }
-
-    // --- Auto-load mapData.json from same folder ---
-    // Load map data
-    async function autoLoadMapData() {
-      logDebug("ACTION", "Attempting to load mapData.json from server...");
-      try {
-        const res = await fetch('/map/wallData');
-        if (!res.ok) throw new Error("File not found or server error");
-        mapData = await res.json();
-
-        logDebug("SUCCESS", "Loaded mapData.json", mapData);
-
-        // Ensure all enemies are objects with correct fields
-        if (Array.isArray(mapData.enemies)) {
-          mapData.enemies = mapData.enemies.map(e => ({
-            ...e,
-            alive: e.alive !== false, // default to true if missing
-            room: e.room ?? ""
-          }));
+          logDebug("INFO", `Rendered ${doorCount} doors.`);
         }
-        // Ensure all doors have a room property
-        if (Array.isArray(mapData.layers)) {
-          mapData.layers.forEach(layer => {
-            if (Array.isArray(layer.walls)) {
-              layer.walls.forEach(wall => {
-                if (wall.type === "door" && wall.room === undefined) {
-                  wall.room = "";
-                }
-              });
-            }
-          });
-        }
-        document.getElementById("saveBtn").disabled = false;
-        document.getElementById("statusMsg").textContent = "Loaded mapData.json";
-        renderTables();
-      } catch (err) {
-        document.getElementById("statusMsg").textContent = "Failed to load mapData.json: " + err.message;
-        logDebug("ERROR", "Failed to load mapData.json", err.message);
         logDivider();
+        scrollDebugToBottom();
       }
-    }
 
-    autoLoadMapData();
+      // --- Auto-load mapData.json from same folder ---
+      // Load map data
+      async function autoLoadMapData() {
+        logDebug("ACTION", "Attempting to load mapData.json from server...");
+        try {
+          const res = await fetch("/map/wallData");
+          if (!res.ok) throw new Error("File not found or server error");
+          mapData = await res.json();
 
-    // --- Set enemy room and alive status ---
-    document.addEventListener("click", function (e) {
-      // For enemies
-      if (e.target.classList.contains("setRoomBtn")) {
-        const idx = e.target.getAttribute("data-idx");
-        const input = document.querySelector(`input.roomInput[data-idx="${idx}"]`);
-        if (mapData.enemies[idx]) {
-          mapData.enemies[idx].room = input.value;
-          logDebug("ACTION", `Set enemy #${mapData.enemies[idx].id} room to "${input.value}"`, mapData.enemies[idx]);
+          logDebug("SUCCESS", "Loaded mapData.json", mapData);
+
+          // Ensure all enemies are objects with correct fields
+          if (Array.isArray(mapData.enemies)) {
+            mapData.enemies = mapData.enemies.map((e) => ({
+              ...e,
+              alive: e.alive !== false, // default to true if missing
+              room: e.room ?? "",
+            }));
+          }
+          // Ensure all doors have a room property
+          if (Array.isArray(mapData.layers)) {
+            mapData.layers.forEach((layer) => {
+              if (Array.isArray(layer.walls)) {
+                layer.walls.forEach((wall) => {
+                  if (wall.type === "door" && wall.room === undefined) {
+                    wall.room = "";
+                  }
+                });
+              }
+            });
+          }
+          document.getElementById("saveBtn").disabled = false;
+          document.getElementById("statusMsg").textContent =
+            "Loaded mapData.json";
           renderTables();
+        } catch (err) {
+          document.getElementById("statusMsg").textContent =
+            "Failed to load mapData.json: " + err.message;
+          logDebug("ERROR", "Failed to load mapData.json", err.message);
+          logDivider();
         }
       }
 
-      // For doors
-      if (e.target.classList.contains("setDoorRoomBtn")) {
-        const layerIdx = e.target.getAttribute("data-layer");
-        const wIdx = e.target.getAttribute("data-widx");
-        const input = document.querySelector(`input.doorRoomInput[data-layer="${layerIdx}"][data-widx="${wIdx}"]`);
-        if (
-          mapData.layers[layerIdx] &&
-          mapData.layers[layerIdx].walls[wIdx] &&
-          mapData.layers[layerIdx].walls[wIdx].type === "door"
-        ) {
-          mapData.layers[layerIdx].walls[wIdx].room = input.value;
-          logDebug("ACTION", `Set door #${mapData.layers[layerIdx].walls[wIdx].id} (layer ${layerIdx}) room to "${input.value}"`, mapData.layers[layerIdx].walls[wIdx]);
-          renderTables();
-        }
-      }
-    });
+      autoLoadMapData();
 
-    // --- Save JSON to server API ---
-    // Save map data
-    document.getElementById("saveBtn").onclick = async function () {
-      logDebug("ACTION", "Attempting to save mapData.json to server...", mapData);
-      try {
-        const res = await fetch('/map/wallData', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(mapData, null, 2)
-        });
-        if (!res.ok) throw new Error("Server responded with status " + res.status);
-        document.getElementById("statusMsg").textContent = "Saved to server!";
-        logDebug("SUCCESS", "Saved mapData.json to server.");
-      } catch (err) {
-        document.getElementById("statusMsg").textContent = "Failed to save: " + err.message;
-        logDebug("ERROR", "Failed to save mapData.json to server", err.message);
-      }
-      logDivider();
-    };
-  </script>
-</body>
+      // --- Set enemy room and alive status ---
+      document.addEventListener("click", function (e) {
+        // For enemies
+        if (e.target.classList.contains("setRoomBtn")) {
+          const idx = e.target.getAttribute("data-idx");
+          const input = document.querySelector(
+            `input.roomInput[data-idx="${idx}"]`,
+          );
+          if (mapData.enemies[idx]) {
+            mapData.enemies[idx].room = input.value;
+            logDebug(
+              "ACTION",
+              `Set enemy #${mapData.enemies[idx].id} room to "${input.value}"`,
+              mapData.enemies[idx],
+            );
+            renderTables();
+          }
+        }
+
+        // For doors
+        if (e.target.classList.contains("setDoorRoomBtn")) {
+          const layerIdx = e.target.getAttribute("data-layer");
+          const wIdx = e.target.getAttribute("data-widx");
+          const input = document.querySelector(
+            `input.doorRoomInput[data-layer="${layerIdx}"][data-widx="${wIdx}"]`,
+          );
+          if (
+            mapData.layers[layerIdx] &&
+            mapData.layers[layerIdx].walls[wIdx] &&
+            mapData.layers[layerIdx].walls[wIdx].type === "door"
+          ) {
+            mapData.layers[layerIdx].walls[wIdx].room = input.value;
+            logDebug(
+              "ACTION",
+              `Set door #${mapData.layers[layerIdx].walls[wIdx].id} (layer ${layerIdx}) room to "${input.value}"`,
+              mapData.layers[layerIdx].walls[wIdx],
+            );
+            renderTables();
+          }
+        }
+      });
+
+      // --- Save JSON to server API ---
+      // Save map data
+      document.getElementById("saveBtn").onclick = async function () {
+        logDebug(
+          "ACTION",
+          "Attempting to save mapData.json to server...",
+          mapData,
+        );
+        try {
+          const res = await fetch("/map/wallData", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(mapData, null, 2),
+          });
+          if (!res.ok)
+            throw new Error("Server responded with status " + res.status);
+          document.getElementById("statusMsg").textContent = "Saved to server!";
+          logDebug("SUCCESS", "Saved mapData.json to server.");
+        } catch (err) {
+          document.getElementById("statusMsg").textContent =
+            "Failed to save: " + err.message;
+          logDebug(
+            "ERROR",
+            "Failed to save mapData.json to server",
+            err.message,
+          );
+        }
+        logDivider();
+      };
+    </script>
+  </body>
 </html>

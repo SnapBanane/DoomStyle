@@ -1,3 +1,6 @@
+import { openDoorsIfRoomCleared } from "../map/enemyRoomHandler.js";
+import { allEnemyMeshes, allDoorMeshes } from "../init.js";
+
 export async function enemyDeath(enemy, enemyHealth) {
   if (enemy.isHit) {
     if (enemy.health === undefined) {
@@ -5,11 +8,8 @@ export async function enemyDeath(enemy, enemyHealth) {
     }
 
     enemy.health -= 10;
-    console.log("Enemy health:", enemy.health);
 
     if (enemy.health <= 0) {
-      console.log("Enemy defeated!");
-
       try {
         // Special case: enemy0 is a simple mesh with no parent or gunPivot
         if (!enemy.parent && enemy.name === "enemy") {
@@ -36,40 +36,37 @@ export async function enemyDeath(enemy, enemyHealth) {
           }
         }
       } catch (error) {
-        console.warn("Error during enemy cleanup:", error);
+        // Cleanup error ignored
       }
 
       enemy.isDead = true;
+      openDoorsIfRoomCleared(allEnemyMeshes, allDoorMeshes);
 
       // --- Use gameId instead of id ---
-      if (enemy.gameId !== undefined) {
+      const lookupId = enemy.gameId !== undefined ? enemy.gameId : enemy.id;
+      if (lookupId !== undefined) {
         try {
-          const res = await fetch('/map/wallData');
-          if (!res.ok) throw new Error('Failed to load map data');
+          const res = await fetch("/map/wallData");
+          if (!res.ok) throw new Error("Failed to load map data");
           const mapData = await res.json();
 
-          // Use == for loose comparison in case of string/number mismatch
-          const mapEnemy = (mapData.enemies || []).find(e => e.id == enemy.gameId);
+          const mapEnemy = (mapData.enemies || []).find(
+            (e) => e.id == lookupId,
+          );
           if (mapEnemy) {
             mapEnemy.alive = false;
 
-            const saveRes = await fetch('/map/wallData', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(mapData, null, 2)
+            const saveRes = await fetch("/map/wallData", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(mapData, null, 2),
             });
-            if (!saveRes.ok) throw new Error('Failed to save map data');
-            console.log(`Enemy ${enemy.gameId} marked as dead and saved to server.`);
-          } else {
-            console.warn(`Enemy with id ${enemy.gameId} not found in map data.`);
+            if (!saveRes.ok) throw new Error("Failed to save map data");
           }
         } catch (err) {
-          console.error('Error updating enemy death on server:', err);
+          // Server update error ignored
         }
-      } else {
-        console.warn('Enemy has no gameId, cannot update map data.');
       }
-      // --- END NEW ---
     }
 
     enemy.isHit = false;

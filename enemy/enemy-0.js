@@ -3,7 +3,6 @@ import { damagePlayer } from "../map/GUI.js";
 
 export function aiForEnemy0(scene, x, y, z) {
   const player = scene.getMeshByName("player");
-  console.log("aiForEnemy0 called");
 
   // Create the enemy mesh
   const enemy = BABYLON.MeshBuilder.CreateBox(

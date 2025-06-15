@@ -6,6 +6,13 @@ import { aiForEnemy0 } from "./enemy/enemy-0.js";
 import { aiForEnemy1 } from "./enemy/enemy-1.js";
 import { updateHealth, GUI, damagePlayer } from "./map/GUI.js";
 import { buildEnemyMap } from "./map/mapConstructor.js";
+import {
+  openDoorsIfRoomCleared,
+  resetAllEnemiesAlive,
+} from "./map/enemyRoomHandler.js";
+
+export const allEnemyMeshes = [];
+export const allDoorMeshes = [];
 
 export async function startGame() {
   const canvas = document.getElementById("renderCanvas");
@@ -28,11 +35,12 @@ export async function startGame() {
       typeof y !== "number" ||
       typeof z !== "number"
     ) {
-      console.error("Invalid arguments. Use the format: spawnEnemy0(x, y, z, id)");
+      console.error(
+        "Invalid arguments. Use the format: spawnEnemy0(x, y, z, id)",
+      );
       return;
     }
-    const mesh = aiForEnemy0(scene, x, y, z);
-    if (mesh && id !== undefined) mesh.gameId = id;
+    const mesh = aiForEnemy0(scene, x, y, z, id);
     return mesh;
   };
 
@@ -42,11 +50,12 @@ export async function startGame() {
       typeof y !== "number" ||
       typeof z !== "number"
     ) {
-      console.error("Invalid arguments. Use the format: spawnEnemy1(x, y, z, id)");
+      console.error(
+        "Invalid arguments. Use the format: spawnEnemy1(x, y, z, id)",
+      );
       return;
     }
-    const mesh = aiForEnemy1(scene, x, y, z);
-    if (mesh && id !== undefined) mesh.gameId = id;
+    const mesh = aiForEnemy1(scene, x, y, z, id);
     return mesh;
   };
 
@@ -97,6 +106,11 @@ export async function startGame() {
   //damagePlayer(40); // DEMO CALL DO NOT KEEP IN PRODUCTION CODE
 
   initEnemies(scene);
+
+  await resetAllEnemiesAlive(scene);
+
+  console.log("[DEBUG] allEnemyMeshes:", allEnemyMeshes);
+  console.log("[DEBUG] allDoorMeshes:", allDoorMeshes);
 
   // Register a render loop to repeatedly render the scene
   engine.runRenderLoop(function () {
