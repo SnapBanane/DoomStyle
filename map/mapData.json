@@ -21,6 +21,10 @@
         [
           -280,
           -80
+        ],
+        [
+          -280,
+          0
         ]
       ],
       "walls": [
@@ -175,6 +179,6 @@
       "alive": true
     }
   ],
-  "enemyIdCounter": 7,
+  "enemyIdCounter": 8,
   "doorIdCounter": 3
 }
