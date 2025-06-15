@@ -1,8 +1,8 @@
-# quickstart.ps1
+# boot.ps1
 $ErrorActionPreference = "Continue"
 
 Write-Host "==========================================="
-Write-Host "  Welcome to the Informatik_DoomStyle App  "
+Write-Host "  Welcome to the DoomStyle App  "
 Write-Host "==========================================="
 Write-Host "Developers: SnapBanane, GamekniteC7, PlutoEdiMedi"
 
@@ -24,16 +24,11 @@ Write-Host ".js/.html Files: $fileCount"
 Write-Host "Total Lines (.js + .html): $lines"
 Write-Host "==========================================="
 
-# Start server
-Write-Host "Starting Node.js server..."
-Start-Process -NoNewWindow -FilePath "node" -ArgumentList "server.js"
+Write-Host -NoNewline "Starting Node.js server... (Press Ctrl+C to stop) "
 
-Start-Sleep -Seconds 2
-
-# Open browser
+# Run node in the foreground so Ctrl+C works
 try {
-    Start-Process "http://localhost:3000"
-    Write-Host "Opened http://localhost:3000 in your browser."
+    node server.js
 } catch {
-    Write-Host "Could not open browser: $_"
+    Write-Host "`nError running server: $_"
 }

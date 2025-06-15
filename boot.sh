@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "==========================================="
-echo "  Welcome to the Informatik_DoomStyle App  "
+echo "  Welcome to the DoomStyle App  "
 echo "==========================================="
 echo "Developers: SnapBanane, GamekniteC7, PlutoEdiMedi"
 
