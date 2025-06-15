@@ -1,56 +1,19 @@
-import { aiForEnemy0 } from "../enemy/enemy-0.js";
-import { aiForEnemy1 } from "../enemy/enemy-1.js";
 import { allEnemyMeshes, allDoorMeshes } from "../init.js";
 
-const scale = 12.5; // Match this to your editor's gridSize
-
 /**
- * Builds Babylon.js wall meshes from a 2D array of wall segments.
- * @param {BABYLON.Scene} scene - The Babylon.js scene.
- * @param {Array} wallData - Array of wall segments, each [[x1, y1], [x2, y2]].
- * @param {Object} [options] - Optional: {height, thickness, y}
- * @returns {BABYLON.Mesh[]} Array of wall meshes.
+ * Point-in-polygon test for 2D arrays.
  */
-function buildWallsFromArray(scene, wallData, options = {}) {
-  const height = options.height || 4;
-  const thickness = options.thickness || 0.5;
-  const y = options.y || height / 2;
-
-  const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
-  wallMat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
-  wallMat.backFaceCulling = false;
-
-  const walls = [];
-  for (const [[x1, z1], [x2, z2]] of wallData) {
-    const dx = x2 - x1;
-    const dz = z2 - z1;
-    const length = Math.sqrt(dx * dx + dz * dz);
-
-    // Center position
-    const cx = (x1 + x2) / 2;
-    const cz = (z1 + z2) / 2;
-
-    // Angle in XZ plane
-    const angle = Math.atan2(dz, dx);
-
-    // Create wall box
-    const wall = BABYLON.MeshBuilder.CreateBox(
-      "wall",
-      {
-        width: length,
-        height: height,
-        depth: thickness,
-      },
-      scene,
-    );
-
-    wall.position = new BABYLON.Vector3(cx, y, cz);
-    wall.rotation = new BABYLON.Vector3(0, -angle, 0);
-    wall.material = wallMat;
-
-    walls.push(wall);
+function isPointInPolygon(point, polygon) {
+  let x = point[0], y = point[1];
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    let xi = polygon[i][0], yi = polygon[i][1];
+    let xj = polygon[j][0], yj = polygon[j][1];
+    let intersect = ((yi > y) !== (yj > y)) &&
+      (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-10) + xi);
+    if (intersect) inside = !inside;
   }
-  return walls;
+  return inside;
 }
 
 /**
@@ -256,7 +219,110 @@ function createRampMesh(scene, x, y, z, width, height, depth, angle) {
 }
 
 /**
- * Builds all layers' walls and (optionally) ramps in Babylon.js.
+ * Builds a floor mesh with optional holes using Babylon.js ExtrudePolygon.
+ * @param {BABYLON.Scene} scene
+ * @param {Array} outerPolygon - Array of [x, z] points.
+ * @param {Array<Array>} holes - Array of polygons (each an array of [x, z] points).
+ * @param {number} y - Height.
+ * @param {string} color - Hex color.
+ * @param {number} thickness - Floor thickness.
+ * @returns {BABYLON.Mesh}
+ */
+function createFloorWithHoles(scene, outerPolygon, holes, y, color, thickness = 1) {
+  const shape = outerPolygon.map(([x, z]) => new BABYLON.Vector2(x, z));
+  const holesVec = (holes || []).map(
+    hole => hole.map(([x, z]) => new BABYLON.Vector2(x, z))
+  );
+  const mesh = BABYLON.MeshBuilder.ExtrudePolygon(
+    "floor",
+    {
+      shape: shape,
+      holes: holesVec,
+      depth: thickness,
+      sideOrientation: BABYLON.Mesh.DOUBLESIDE
+    },
+    scene
+  );
+  mesh.position.y = y;
+  const mat = new BABYLON.StandardMaterial("floorMat", scene);
+  if (color && color.startsWith("#")) {
+    const r = parseInt(color.substr(1, 2), 16) / 255;
+    const g = parseInt(color.substr(3, 2), 16) / 255;
+    const b = parseInt(color.substr(5, 2), 16) / 255;
+    mat.diffuseColor = new BABYLON.Color3(r, g, b);
+  }
+  mat.backFaceCulling = false;
+  mesh.material = mat;
+  return mesh;
+}
+
+/**
+ * Finds all simple closed polygons (loops) in a layer's walls (treating doors as walls).
+ * Returns an array of polygons, each as an array of [x, y] points.
+ */
+function findAllClosedPolygons(points, walls) {
+  // Build adjacency list
+  const adj = {};
+  for (const wall of walls) {
+    if (!wall || !wall.points) continue;
+    let [a, b] = wall.points;
+    if (!adj[a]) adj[a] = [];
+    if (!adj[b]) adj[b] = [];
+    adj[a].push(b);
+    adj[b].push(a);
+  }
+
+  const visitedEdges = new Set();
+  const polygons = [];
+
+  function edgeKey(a, b) {
+    return a < b ? `${a},${b}` : `${b},${a}`;
+  }
+
+  // Helper: walk a polygon loop starting from edge (start, next)
+  function walkPolygon(start, next) {
+    const poly = [start, next];
+    let prev = start;
+    let curr = next;
+    while (true) {
+      const neighbors = adj[curr].filter(n => n !== prev);
+      if (neighbors.length === 0) return null;
+      const next2 = neighbors[0];
+      if (next2 === start) {
+        return poly;
+      }
+      if (poly.includes(next2)) return null; // not a simple loop
+      poly.push(next2);
+      prev = curr;
+      curr = next2;
+    }
+  }
+
+  // Try every edge as a starting edge
+  for (let a = 0; a < points.length; a++) {
+    if (!adj[a]) continue;
+    for (const b of adj[a]) {
+      const key = edgeKey(a, b);
+      if (visitedEdges.has(key)) continue;
+      const poly = walkPolygon(a, b);
+      if (poly && poly.length >= 3) {
+        // Mark all edges as visited
+        for (let i = 0; i < poly.length; i++) {
+          const k = edgeKey(poly[i], poly[(i + 1) % poly.length]);
+          visitedEdges.add(k);
+        }
+        // Avoid duplicates (by point indices)
+        if (!polygons.some(p => p.length === poly.length && p.every((v, i) => v === poly[i]))) {
+          polygons.push(poly.map(i => points[i]));
+        }
+      }
+    }
+  }
+  return polygons;
+}
+
+/**
+ * Builds all layers' walls, ramps, and floors (with holes) in Babylon.js.
  * @param {BABYLON.Scene} scene
  * @param {Object} mapData - The map data object.
  * @param {Object} [options] - {layerHeight, wallHeight, wallThickness}
@@ -264,7 +330,7 @@ function createRampMesh(scene, x, y, z, width, height, depth, angle) {
  */
 export function buildMultiLayerMap(scene, mapData, options = {}) {
   const meshes = [];
-  const gridSize = 1; // <-- Move this to the top!
+  const gridSize = 1;
   const layerHeight = options.layerHeight || 4;
   const wallHeight = options.wallHeight || 4;
   const wallThickness = options.wallThickness || 0.5;
@@ -273,6 +339,7 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
 
   // --- Render walls ---
   mapData.layers.forEach((layer, i) => {
+    if (!layer.walls || !layer.points) return;
     const y = i * layerHeight + wallHeight / 2;
     for (const wall of layer.walls) {
       let a, b, type;
@@ -323,8 +390,6 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
       if (type === "door" && wall.id !== undefined) {
         wallMesh.doorId = wall.id;
         wallMesh.room = wall.room;
-
-        // Add to allDoorMeshes
         allDoorMeshes.push(wallMesh);
       }
 
@@ -335,9 +400,8 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
   // --- Render ramps as real ramps (prisms) ---
   if (mapData.ramps) {
     for (const ramp of mapData.ramps) {
-      const rampHeight = layerHeight * 2; // Adjust height based on layer
+      const rampHeight = layerHeight * 2;
       const y = ramp.layer;
-      // width and depth can be adjusted as needed
       const width = gridSize * 4;
       const depth = gridSize * 4;
       const mesh = createRampMesh(
@@ -354,26 +418,35 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
     }
   }
 
-  // --- Render floors as convex shapes ---
+  // --- Render floors as convex shapes, supporting multiple disconnected areas and holes ---
   const floorThickness = 0.1 * gridSize;
   mapData.layers.forEach((layer, i) => {
-    if (i === 0) return; // Skip the most bottom layer
-    // Get the polygon points for this layer
-    const poly2d = getPolygonPoints(layer.points, layer.walls);
-    if (poly2d && poly2d.length >= 3) {
-      // Place the floor so its top is 0.1 below the top of the walls
-      const y = i * layerHeight + wallHeight - wallHeight - floorThickness / 2;
-      const mesh = createConvexFloor(
-        scene,
-        poly2d,
-        y,
-        layer.color,
-        floorThickness,
-        1,
+    if (i === 0 || !layer.points || !layer.walls) return; // Skip the most bottom layer
+    // Find all closed polygons in this layer (treating doors as walls)
+    const polygons = findAllClosedPolygons(layer.points, layer.walls);
+
+    // Prepare holes (array of arrays of [x, z])
+    const holes = (layer.holes || []).map(holeIdxs => holeIdxs.map(idx => layer.points[idx]));
+
+    for (const poly2d of polygons) {
+      // Find holes inside this polygon
+      const holesInThis = holes.filter(hole =>
+        hole.length > 0 && isPointInPolygon(hole[0], poly2d)
       );
-      if (mesh) {
-        mesh.material.backFaceCulling = false;
-        meshes.push(mesh);
+      if (poly2d && poly2d.length >= 3) {
+        const y = i * layerHeight + wallHeight - wallHeight - floorThickness / 2;
+        const mesh = createFloorWithHoles(
+          scene,
+          poly2d,
+          holesInThis,
+          y,
+          layer.color,
+          floorThickness
+        );
+        if (mesh) {
+          mesh.material.backFaceCulling = false;
+          meshes.push(mesh);
+        }
       }
     }
   });

@@ -64,10 +64,6 @@
         ],
         [
           280,
-          -40
-        ],
-        [
-          280,
           40
         ],
         [
@@ -449,6 +445,10 @@
         [
           -720,
           80
+        ],
+        [
+          280,
+          -40
         ]
       ],
       "walls": [
@@ -538,21 +538,7 @@
         },
         {
           "points": [
-            14,
-            15
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
             15,
-            16
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            16,
             10
           ],
           "type": "wall"
@@ -560,20 +546,27 @@
         {
           "points": [
             3,
+            16
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            16,
             17
           ],
           "type": "wall"
         },
         {
           "points": [
-            17,
+            4,
             18
           ],
           "type": "wall"
         },
         {
           "points": [
-            4,
+            17,
             19
           ],
           "type": "wall"
@@ -581,21 +574,21 @@
         {
           "points": [
             18,
+            21
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            23,
             20
           ],
           "type": "wall"
         },
         {
           "points": [
-            19,
-            22
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            24,
-            21
+            23,
+            24
           ],
           "type": "wall"
         },
@@ -615,35 +608,49 @@
         },
         {
           "points": [
-            26,
+            21,
             27
           ],
           "type": "wall"
         },
         {
           "points": [
-            22,
+            27,
             28
           ],
           "type": "wall"
         },
         {
           "points": [
-            28,
-            29
+            29,
+            30
           ],
           "type": "wall"
         },
         {
           "points": [
             30,
-            31
+            28
           ],
           "type": "wall"
         },
         {
           "points": [
             31,
+            21
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            20,
+            32
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            32,
             29
           ],
           "type": "wall"
@@ -651,69 +658,55 @@
         {
           "points": [
             32,
-            22
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            21,
             33
           ],
           "type": "wall"
         },
         {
           "points": [
-            33,
-            30
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            33,
+            26,
             34
           ],
           "type": "wall"
         },
         {
           "points": [
-            27,
+            34,
             35
           ],
           "type": "wall"
         },
         {
           "points": [
-            35,
-            36
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            39,
-            38
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
             38,
-            40
+            37
           ],
           "type": "wall"
         },
         {
           "points": [
-            41,
+            37,
+            39
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            40,
+            41
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            37,
             42
           ],
           "type": "wall"
         },
         {
           "points": [
-            38,
+            42,
             43
           ],
           "type": "wall"
@@ -727,8 +720,8 @@
         },
         {
           "points": [
-            44,
-            45
+            45,
+            46
           ],
           "type": "wall"
         },
@@ -755,15 +748,15 @@
         },
         {
           "points": [
-            49,
-            50
+            40,
+            41
           ],
           "type": "wall"
         },
         {
           "points": [
-            41,
-            42
+            50,
+            51
           ],
           "type": "wall"
         },
@@ -777,14 +770,14 @@
         {
           "points": [
             52,
-            53
+            40
           ],
           "type": "wall"
         },
         {
           "points": [
             53,
-            41
+            54
           ],
           "type": "wall"
         },
@@ -811,22 +804,22 @@
         },
         {
           "points": [
-            57,
+            53,
             58
           ],
           "type": "wall"
         },
         {
           "points": [
-            54,
-            59
+            53,
+            40
           ],
           "type": "wall"
         },
         {
           "points": [
-            54,
-            41
+            59,
+            60
           ],
           "type": "wall"
         },
@@ -853,71 +846,57 @@
         },
         {
           "points": [
-            63,
+            59,
             64
           ],
           "type": "wall"
         },
         {
           "points": [
-            60,
-            65
+            59,
+            56
           ],
           "type": "wall"
         },
         {
           "points": [
-            60,
-            57
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            69,
-            68
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            67,
-            68
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            67,
-            66
+            68,
+            67
           ],
           "type": "wall"
         },
         {
           "points": [
             66,
-            49
+            67
           ],
           "type": "wall"
         },
         {
           "points": [
-            71,
-            69
+            66,
+            65
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            65,
+            48
           ],
           "type": "wall"
         },
         {
           "points": [
             70,
-            66
+            68
           ],
           "type": "wall"
         },
         {
           "points": [
-            75,
-            74
+            69,
+            65
           ],
           "type": "wall"
         },
@@ -930,42 +909,63 @@
         },
         {
           "points": [
-            75,
+            73,
             72
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            74,
+            71
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            75,
+            62
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            71,
+            68
           ],
           "type": "wall"
         },
         {
           "points": [
             76,
-            63
+            71
           ],
           "type": "wall"
         },
         {
           "points": [
             72,
-            69
+            77
           ],
           "type": "wall"
         },
         {
           "points": [
-            77,
-            72
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            73,
+            50,
             78
           ],
           "type": "wall"
         },
         {
           "points": [
-            51,
+            78,
+            22
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            22,
             79
           ],
           "type": "wall"
@@ -973,13 +973,20 @@
         {
           "points": [
             79,
-            23
+            19
           ],
           "type": "wall"
         },
         {
           "points": [
-            23,
+            36,
+            50
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            72,
             80
           ],
           "type": "wall"
@@ -987,34 +994,20 @@
         {
           "points": [
             80,
-            20
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            37,
-            51
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            73,
             81
           ],
           "type": "wall"
         },
         {
           "points": [
-            81,
+            75,
             82
           ],
           "type": "wall"
         },
         {
           "points": [
-            76,
+            81,
             83
           ],
           "type": "wall"
@@ -1028,56 +1021,35 @@
         },
         {
           "points": [
-            83,
+            84,
             85
           ],
           "type": "wall"
         },
         {
           "points": [
-            85,
+            83,
             86
           ],
           "type": "wall"
         },
         {
           "points": [
-            84,
+            86,
             87
           ],
           "type": "wall"
         },
         {
           "points": [
-            87,
+            85,
             88
           ],
           "type": "wall"
         },
         {
           "points": [
-            86,
-            89
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            88,
-            90
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            90,
-            91
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            92,
+            87,
             89
           ],
           "type": "wall"
@@ -1085,6 +1057,34 @@
         {
           "points": [
             89,
+            90
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            91,
+            88
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            88,
+            91
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            91,
+            93
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            93,
             92
           ],
           "type": "wall"
@@ -1099,62 +1099,55 @@
         {
           "points": [
             94,
-            93
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            93,
             95
           ],
           "type": "wall"
         },
         {
           "points": [
-            95,
-            96
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            97,
-            91
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            97,
-            98
+            96,
+            90
           ],
           "type": "wall"
         },
         {
           "points": [
             96,
+            97
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            95,
+            98
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            97,
             99
           ],
           "type": "wall"
         },
         {
           "points": [
-            98,
+            99,
             100
           ],
           "type": "wall"
         },
         {
           "points": [
-            100,
+            98,
             101
           ],
           "type": "wall"
         },
         {
           "points": [
-            99,
+            101,
             102
           ],
           "type": "wall"
@@ -1168,15 +1161,22 @@
         },
         {
           "points": [
-            103,
+            100,
             104
           ],
           "type": "wall"
         },
         {
           "points": [
-            101,
+            104,
             105
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            103,
+            106
           ],
           "type": "wall"
         },
@@ -1189,41 +1189,34 @@
         },
         {
           "points": [
-            104,
-            107
+            107,
+            108
           ],
           "type": "wall"
         },
         {
           "points": [
-            106,
-            107
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            108,
-            109
+            109,
+            110
           ],
           "type": "wall"
         },
         {
           "points": [
             110,
-            111
+            98
           ],
           "type": "wall"
         },
         {
           "points": [
-            111,
-            99
+            14,
+            111
           ],
           "type": "wall"
         }
       ],
-      "color": "#408080"
+      "color": "#32ee17"
     },
     {
       "points": [
@@ -1274,10 +1267,6 @@
         [
           -160,
           -160
-        ],
-        [
-          280,
-          -40
         ],
         [
           280,
@@ -1450,6 +1439,26 @@
         [
           -400,
           80
+        ],
+        [
+          280,
+          -40
+        ],
+        [
+          -80,
+          -160
+        ],
+        [
+          -80,
+          -80
+        ],
+        [
+          -80,
+          80
+        ],
+        [
+          -80,
+          160
         ]
       ],
       "walls": [
@@ -1518,28 +1527,21 @@
         },
         {
           "points": [
-            9,
+            8,
             12
           ],
           "type": "wall"
         },
         {
           "points": [
-            8,
-            13
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            12,
-            13
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
             0,
+            13
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            13,
             14
           ],
           "type": "wall"
@@ -1553,22 +1555,22 @@
         },
         {
           "points": [
-            15,
-            16
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            17,
-            18
+            16,
+            17
           ],
           "type": "wall"
         },
         {
           "points": [
             1,
-            18
+            17
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            19,
+            20
           ],
           "type": "wall"
         },
@@ -1624,14 +1626,14 @@
         {
           "points": [
             27,
-            28
+            18
           ],
           "type": "wall"
         },
         {
           "points": [
-            28,
-            19
+            27,
+            28
           ],
           "type": "wall"
         },
@@ -1659,6 +1661,20 @@
         {
           "points": [
             31,
+            24
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            24,
+            25
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            19,
             32
           ],
           "type": "wall"
@@ -1666,20 +1682,13 @@
         {
           "points": [
             32,
-            25
+            18
           ],
           "type": "wall"
         },
         {
           "points": [
-            25,
-            26
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            20,
+            16,
             33
           ],
           "type": "wall"
@@ -1687,13 +1696,13 @@
         {
           "points": [
             33,
-            19
+            15
           ],
           "type": "wall"
         },
         {
           "points": [
-            17,
+            35,
             34
           ],
           "type": "wall"
@@ -1701,20 +1710,13 @@
         {
           "points": [
             34,
-            16
+            36
           ],
           "type": "wall"
         },
         {
           "points": [
             36,
-            35
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            35,
             37
           ],
           "type": "wall"
@@ -1813,6 +1815,20 @@
         {
           "points": [
             50,
+            35
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            35,
+            50
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            40,
             51
           ],
           "type": "wall"
@@ -1820,40 +1836,75 @@
         {
           "points": [
             51,
-            36
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            36,
-            51
-          ],
-          "type": "wall"
-        },
-        {
-          "points": [
-            41,
             52
           ],
           "type": "wall"
         },
         {
           "points": [
-            52,
-            53
+            53,
+            54
           ],
           "type": "wall"
         },
         {
           "points": [
-            54,
-            55
+            55,
+            9
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            55,
+            12
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            11,
+            56
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            56,
+            57
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            57,
+            10
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            59,
+            7
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            59,
+            58
+          ],
+          "type": "wall"
+        },
+        {
+          "points": [
+            58,
+            6
           ],
           "type": "wall"
         }
       ],
-      "color": "#222222"
+      "color": "#ff1111"
     },
     {
       "points": [
@@ -1896,6 +1947,14 @@
         [
           200,
           -200
+        ],
+        [
+          -840,
+          160
+        ],
+        [
+          -840,
+          160
         ]
       ],
       "walls": [
@@ -1970,7 +2029,7 @@
           "type": "wall"
         }
       ],
-      "color": "#222222"
+      "color": "#ffff80"
     }
   ],
   "ramps": [
@@ -2024,6 +2083,6 @@
     }
   ],
   "enemies": [],
-  "enemyIdCounter": 8,
-  "doorIdCounter": 3
+  "enemyIdCounter": 2,
+  "doorIdCounter": 1
 }
