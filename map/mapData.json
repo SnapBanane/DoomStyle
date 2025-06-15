@@ -51,8 +51,7 @@
             2
           ],
           "type": "door",
-          "id": 1,
-          "room": "1"
+          "id": 1
         },
         {
           "points": [
@@ -60,8 +59,7 @@
             4
           ],
           "type": "door",
-          "id": 2,
-          "room": "1"
+          "id": 2
         }
       ],
       "color": "#408080"
@@ -122,59 +120,10 @@
   "enemies": [
     {
       "layer": 0,
-      "x": -100,
-      "y": 140,
-      "type": 1,
-      "id": 1,
-      "room": "1",
-      "alive": true
-    },
-    {
-      "layer": 0,
-      "x": -100,
-      "y": 180,
-      "type": 1,
-      "id": 2,
-      "room": "1",
-      "alive": true
-    },
-    {
-      "layer": 0,
-      "x": -140,
-      "y": 140,
-      "type": 1,
-      "id": 3,
-      "room": "2",
-      "alive": true
-    },
-    {
-      "layer": 0,
-      "x": -140,
-      "y": 180,
-      "type": 1,
-      "id": 4,
-      "room": "1",
-      "alive": true
-    },
-    {
-      "layer": 0,
-      "x": 100,
+      "x": 20,
       "y": 100,
       "type": 2,
-      "id": 5,
-      "room": "1",
-      "alive": true
-    },
-    {
-      "layer": 0,
-      "x": 100,
-      "y": 20,
-      "type": 2,
-      "id": 6,
-      "room": "1",
-      "alive": true
+      "id": 3
     }
-  ],
-  "enemyIdCounter": 7,
-  "doorIdCounter": 3
+  ]
 }

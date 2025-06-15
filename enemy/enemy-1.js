@@ -2,7 +2,7 @@ import { enemyDeath } from "./enemyDeath.js";
 import { rayCastShootFromEnemy } from "./shootingFromEnemy.js";
 import { createTurretGun } from "../models/railgun/GunModel.js";
 
-export function aiForEnemy1(scene, x, y, z) {
+export function aiForEnemy1(scene, x, y, z, id) {
   const player = scene.getMeshByName("player");
 
   // Create the gun
@@ -140,4 +140,6 @@ export function aiForEnemy1(scene, x, y, z) {
       enemyDeath(hitBox, 50); // Pass hitbox instead of enemy
     });
   }
+
+  return enemy;
 }

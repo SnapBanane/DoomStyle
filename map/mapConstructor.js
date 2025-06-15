@@ -431,32 +431,74 @@ function createConvexFloor(scene, points, y, color, thickness = 1, scale = 1) {
 }
 
 /**
- * Spawns all enemies from mapData using the correct AI function.
- * @param {BABYLON.Scene} scene
- * @param {Object} mapData
- * @param {Object} [options] - {layerHeight}
+ * Spawns all enemies from mapData.enemies and assigns their unique id.
+ * @param {BABYLON.Scene} scene - The Babylon.js scene.
+ * @param {Object} mapData - The map data object with an 'enemies' array.
+ * @param {Object} [options] - Optional: {layerHeight}
  */
-function buildEnemyMap(scene, mapData, options = {}) {
+export function buildEnemyMap(scene, mapData, options = {}) {
   if (!mapData.enemies || !Array.isArray(mapData.enemies)) {
+    console.warn("No enemies found in mapData:", mapData.enemies);
     return;
   }
 
   const layerHeight = options.layerHeight || 4;
 
   for (const enemy of mapData.enemies) {
-    const x = enemy.x;
-    const z = enemy.y;
-    const y = (enemy.layer || 0) * layerHeight;
-    if (enemy.type === 1) {
+    let x = enemy.x;
+    let z = enemy.y;
+    let y = (enemy.layer || 0) * layerHeight;
+    const id = enemy.id;
+    const type = enemy.type;
+
+    // Move type 1 enemies up by 0.5 to avoid spawning under the map
+    if (type === 1) {
+      y += 0.5;
+    }
+
+    console.debug(`Preparing to spawn enemy:`, {
+      id,
+      type,
+      x,
+      y,
+      z,
+      enemyObj: enemy
+    });
+
+    let mesh = null;
+    if (type === 1) {
       if (typeof window.spawnEnemy0 === "function") {
-        window.spawnEnemy0(x, y, z);
+        mesh = window.spawnEnemy0(x, y, z, id);
+        console.debug(`Called spawnEnemy0 for id ${id}:`, mesh);
+      } else {
+        console.error("spawnEnemy0 is not a function on window!");
       }
-    } else if (enemy.type === 2) {
+    } else if (type === 2) {
       if (typeof window.spawnEnemy1 === "function") {
-        window.spawnEnemy1(x, y, z);
+        mesh = window.spawnEnemy1(x, y, z, id);
+        console.debug(`Called spawnEnemy1 for id ${id}:`, mesh);
+      } else {
+        console.error("spawnEnemy1 is not a function on window!");
       }
+    } else {
+      console.warn(`Unknown enemy type: ${type} for enemy id ${id}`);
+    }
+
+    if (mesh) {
+      mesh.id = id;
+      mesh.enemyType = type;
+      mesh.mapDataIndex = mapData.enemies.indexOf(enemy);
+      mesh.alive = enemy.alive !== false;
+
+      // Print id on spawn
+      console.log(`Spawned enemy with id: ${id}`);
+
+      // Add a method or property to print id when damaged
+      mesh.onDamage = function () {
+        console.log(`Enemy with id ${id} received damage.`);
+      };
+    } else {
+      console.error(`Failed to spawn enemy with id: ${id}, type: ${type}`);
     }
   }
 }
-
-export { buildWallsFromArray, exportWallData, buildEnemyMap };

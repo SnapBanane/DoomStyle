@@ -22,28 +22,32 @@ export async function startGame() {
   window.scene = scene;
 
   // Assign spawn functions BEFORE createScene
-  window.spawnEnemy0 = (x, y, z) => {
+  window.spawnEnemy0 = (x, y, z, id) => {
     if (
       typeof x !== "number" ||
       typeof y !== "number" ||
       typeof z !== "number"
     ) {
-      console.error("Invalid arguments. Use the format: spawnEnemy0(x, y, z)");
+      console.error("Invalid arguments. Use the format: spawnEnemy0(x, y, z, id)");
       return;
     }
-    aiForEnemy0(scene, x, y, z);
+    const mesh = aiForEnemy0(scene, x, y, z);
+    if (mesh && id !== undefined) mesh.gameId = id;
+    return mesh;
   };
 
-  window.spawnEnemy1 = (x, y, z) => {
+  window.spawnEnemy1 = (x, y, z, id) => {
     if (
       typeof x !== "number" ||
       typeof y !== "number" ||
       typeof z !== "number"
     ) {
-      console.error("Invalid arguments. Use the format: spawnEnemy1(x, y, z)");
+      console.error("Invalid arguments. Use the format: spawnEnemy1(x, y, z, id)");
       return;
     }
-    aiForEnemy1(scene, x, y, z);
+    const mesh = aiForEnemy1(scene, x, y, z);
+    if (mesh && id !== undefined) mesh.gameId = id;
+    return mesh;
   };
 
   await createScene(scene, canvas);

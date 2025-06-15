@@ -100,4 +100,6 @@ export function aiForEnemy0(scene, x, y, z) {
       );
     };
   }
+
+  return enemy;
 }
