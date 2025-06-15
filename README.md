@@ -48,7 +48,7 @@ Open the Webserver via `node server` (requires node.js to work) and play the map
 
 On Windows run:
 ```sh
-.\boot.sh
+.\boot.ps1
 ```
 
 On Linux use:`
