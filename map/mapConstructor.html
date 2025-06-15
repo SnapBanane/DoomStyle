@@ -75,7 +75,8 @@
     <button id="rampModeBtn" class="ramp-btn">Ramp Tool</button>
     <button id="saveBtn">Save Map</button>
     <button id="enemySpawnerBtn" class="ramp-btn">Enemy Spawner</button>
-    <span id="enemyTypeLabel">Type: 1</span>
+    <span id="enemyTypeLabel"></span>
+    <button id="doorModeBtn">Door Mode: OFF</button>
   </div>
   <script type="module">
 import { fetchWallData, saveWallData } from './mapConstructor.js';
@@ -90,6 +91,7 @@ let enemySpawnerMode = false;
 let enemyPreview = null;
 let enemyType = 1; // 1 or 2
 let enemies = []; // {layer, x, y, type}
+let placingDoor = false;
 
 // Each layer: { points: [[x,y],...], walls: [[a,b],...], color: "#hex" }
 function createLayer(color = "#222222") {
@@ -129,6 +131,15 @@ if (wallData && wallData.length && !wallData.layers) {
   ramps = [];
 }
 
+// Convert walls to new format (if necessary)
+for (const layer of layers) {
+    layer.walls = layer.walls.map(wall =>
+        Array.isArray(wall)
+            ? { points: wall, type: "wall" }
+            : wall
+    );
+}
+
 // --- Canvas and Drawing ---
 const canvas = document.getElementById("editor");
 
@@ -157,13 +168,19 @@ function getPolygonFromWalls(points, walls) {
   }
   // Build adjacency list
   const adj = {};
-  for (const [a, b] of walls) {
+  for (const wall of walls) {
+    const [a, b] = Array.isArray(wall) ? wall : wall.points;
     if (!adj[a]) adj[a] = [];
     if (!adj[b]) adj[b] = [];
     adj[a].push(b);
     adj[b].push(a);
   }
-  let start = walls[0][0];
+  let start;
+  if (walls.length > 0) {
+    start = Array.isArray(walls[0]) ? walls[0][0] : walls[0].points[0];
+  } else {
+    return convexHull(points);
+  }
   const poly = [start];
   let prev = null, curr = start;
   while (true) {
@@ -328,13 +345,23 @@ function draw() {
     // Walls
     ctx.strokeStyle = l === currentLayer ? "#f00" : "#888";
     ctx.lineWidth = 2;
-    for (const [aIdx, bIdx] of layer.walls) {
-      const [ax, ay] = worldToScreen(layer.points[aIdx][0], layer.points[aIdx][1]);
-      const [bx, by] = worldToScreen(layer.points[bIdx][0], layer.points[bIdx][1]);
-      ctx.beginPath();
-      ctx.moveTo(ax, ay);
-      ctx.lineTo(bx, by);
-      ctx.stroke();
+    for (const wall of layer.walls) {
+        // Support old format for backward compatibility
+        let aIdx, bIdx, type;
+        if (Array.isArray(wall)) {
+            [aIdx, bIdx] = wall;
+            type = "wall";
+        } else {
+            [aIdx, bIdx] = wall.points;
+            type = wall.type || "wall";
+        }
+        const [ax, ay] = worldToScreen(layer.points[aIdx][0], layer.points[aIdx][1]);
+        const [bx, by] = worldToScreen(layer.points[bIdx][0], layer.points[bIdx][1]);
+        ctx.strokeStyle = type === "door" ? "#00f" : (layer === layers[currentLayer] ? "#f00" : "#888");
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(bx, by);
+        ctx.stroke();
     }
     // Points
     for (let i = 0; i < layer.points.length; i++) {
@@ -345,6 +372,27 @@ function draw() {
       ctx.fill();
     }
     ctx.restore();
+  }
+
+  // Draw rooms
+  for (let l = 0; l < layers.length; l++) {
+    const layer = layers[l];
+    const rooms = getRoomsFromLayer(layer);
+    const roomColors = generateDistinctColors(rooms.length);
+    rooms.forEach((room, idx) => {
+        ctx.save();
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = roomColors[idx];
+        ctx.beginPath();
+        for (let i = 0; i < room.length; i++) {
+            const [x, y] = worldToScreen(layer.points[room[i]][0], layer.points[room[i]][1]);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill("evenodd");
+        ctx.restore();
+    });
   }
 }
 
@@ -589,6 +637,11 @@ document.getElementById('enemySpawnerBtn').onclick = function() {
   draw();
 };
 
+document.getElementById("doorModeBtn").onclick = function() {
+    placingDoor = !placingDoor;
+    this.textContent = "Door Mode: " + (placingDoor ? "ON" : "OFF");
+};
+
 // --- Mouse Events ---
 canvas.addEventListener("mousedown", e => {
   if (e.button === 1) {
@@ -634,8 +687,23 @@ canvas.addEventListener("mousedown", e => {
       const [x, y] = layers[currentLayer].points[i];
       if (Math.hypot(x - wx, y - wy) < 10) {
         pushUndo();
-        layers[currentLayer].walls = layers[currentLayer].walls.filter(([a, b]) => a !== i && b !== i)
-          .map(([a, b]) => [a > i ? a - 1 : a, b > i ? b - 1 : b]);
+        layers[currentLayer].walls = layers[currentLayer].walls
+          .filter(wall => {
+            const [a, b] = Array.isArray(wall) ? wall : wall.points;
+            return a !== i && b !== i;
+          })
+          .map(wall => {
+            if (Array.isArray(wall)) {
+              let [a, b] = wall;
+              return [a > i ? a - 1 : a, b > i ? b - 1 : b];
+            } else {
+              let [a, b] = wall.points;
+              return {
+                ...wall,
+                points: [a > i ? a - 1 : a, b > i ? b - 1 : b]
+              };
+            }
+          });
         layers[currentLayer].points.splice(i, 1);
         if (selectedPoint === i) selectedPoint = null;
         draw();
@@ -652,7 +720,10 @@ canvas.addEventListener("mousedown", e => {
         selectedPoint = i;
       } else if (selectedPoint !== i) {
         pushUndo();
-        layers[currentLayer].walls.push([selectedPoint, i]);
+        layers[currentLayer].walls.push({
+            points: [selectedPoint, i],
+            type: placingDoor ? "door" : "wall"
+        });
         selectedPoint = null;
       } else {
         draggingPoint = i;
@@ -735,16 +806,15 @@ window.addEventListener("resize", () => {
 
 // --- Save/Load ---
 function getMapData() {
-  // Save all layers, ramps, and enemies
-  return {
-    layers: layers.map(l => ({
-      points: l.points,
-      walls: l.walls,
-      color: l.color
-    })),
-    ramps,
-    enemies
-  };
+    return {
+        layers: layers.map(l => ({
+            points: l.points,
+            walls: l.walls, // now objects with type
+            color: l.color
+        })),
+        ramps,
+        enemies
+    };
 }
 document.getElementById('saveBtn').onclick = async function() {
   await saveWallData(getMapData());
@@ -772,18 +842,102 @@ function drawRampArrow(ctx, x, y, angle, size = gridSize * 0.4) {
   ctx.restore();
 }
 
-// In your draw() loop for ramps:
-ramps.forEach(ramp => {
-    if (ramp.layer !== currentLayer) return;
-    const [sx, sy] = worldToScreen(ramp.x, ramp.y);
-    // Draw ramp base (optional)
-    ctx.beginPath();
-    ctx.arc(sx, sy, gridSize * 0.3, 0, 2 * Math.PI);
-    ctx.strokeStyle = "#00f";
-    ctx.stroke();
-    // Draw arrow
-    drawRampArrow(ctx, sx, sy, ramp.angle);
-});
+function getRoomsFromLayer(layer) {
+    // Build adjacency list without doors
+    const adj = {};
+    for (const wall of layer.walls) {
+        if (wall.type === "door") continue;
+        const [a, b] = wall.points;
+        if (!adj[a]) adj[a] = [];
+        if (!adj[b]) adj[b] = [];
+        adj[a].push(b);
+        adj[b].push(a);
+    }
+    // Find all closed loops (rooms)
+    const visitedEdges = new Set();
+    const rooms = [];
+    for (let start = 0; start < layer.points.length; start++) {
+        for (const next of (adj[start] || [])) {
+            const edgeKey = `${start},${next}`;
+            if (visitedEdges.has(edgeKey)) continue;
+            // Try to walk a loop
+            let path = [start, next];
+            let curr = next, prev = start;
+            let found = false;
+            while (true) {
+                const neighbors = (adj[curr] || []).filter(n => n !== prev);
+                if (neighbors.length === 0) break;
+                const next2 = neighbors[0];
+                if (next2 === start) {
+                    found = true;
+                    break;
+                }
+                if (path.includes(next2)) break; // avoid infinite loop
+                path.push(next2);
+                prev = curr;
+                curr = next2;
+            }
+            if (found && path.length >= 3) {
+                // Mark all edges as visited
+                for (let i = 0; i < path.length; i++) {
+                    const a = path[i], b = path[(i+1)%path.length];
+                    visitedEdges.add(`${a},${b}`);
+                    visitedEdges.add(`${b},${a}`);
+                }
+                // Avoid duplicates
+                if (!rooms.some(r => r.points.length === path.length && r.points.every((v,i) => v === path[i]))) {
+                    rooms.push({ roomId: rooms.length, points: [...path] });
+                }
+            }
+        }
+    }
+
+    // Assign room numbers to doors
+    for (const wall of layer.walls) {
+        if (wall.type !== "door") continue;
+        wall.rooms = [];
+        for (const room of rooms) {
+            // If both door points are in the room polygon, it's a border
+            if (room.points.includes(wall.points[0]) && room.points.includes(wall.points[1])) {
+                wall.rooms.push(room.roomId);
+            }
+        }
+        // If not found, leave empty (can be manually fixed in JSON)
+    }
+
+    return rooms;
+}
+
+// Generate N distinct colors (HSL)
+function generateDistinctColors(n) {
+    const colors = [];
+    for (let i = 0; i < n; i++) {
+        const hue = Math.round((360 * i) / n);
+        colors.push(`hsl(${hue}, 90%, 60%)`);
+    }
+    return colors;
+}
+
+// In your draw() function, after drawOrigin():
+for (let l = 0; l < layers.length; l++) {
+    const layer = layers[l];
+    const rooms = getRoomsFromLayer(layer);
+    const roomColors = generateDistinctColors(rooms.length);
+    rooms.forEach((room, idx) => {
+        ctx.save();
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = roomColors[idx];
+        ctx.beginPath();
+        for (let i = 0; i < room.length; i++) {
+            const [x, y] = worldToScreen(layer.points[room[i]][0], layer.points[room[i]][1]);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill("evenodd");
+        ctx.restore();
+    });
+}
   </script>
 </body>
 </html>
