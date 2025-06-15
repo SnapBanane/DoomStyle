@@ -5,7 +5,7 @@
 //
 
 const release = 0; // Set the release version 
-const phase = 'ALPHA'; // Set the phase of the project
+const phase = 'BETA'; // Set the phase of the project
 
 const repo = 'SnapBanane/doomstyle'; // Set the repo; format: Username/Reponame (this only works on GitHub).
 
