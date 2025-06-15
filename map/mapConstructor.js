@@ -101,17 +101,33 @@ export function extractWallSegments(mapData) {
 
 // Helper: get polygon points in order (fallback to convex hull)
 function getPolygonPoints(points, walls) {
-    if (points.length < 3) return null;
-    if (!walls || walls.length < 3) return convexHull(points);
+    if (points.length < 3) return [];
+    if (!walls || walls.length < 3) return [];
+
     // Build adjacency list
     const adj = {};
-    for (const [a, b] of walls) {
+    for (const wall of walls) {
+        let a, b;
+        if (Array.isArray(wall)) {
+            [a, b] = wall;
+        } else if (wall && wall.points) {
+            [a, b] = wall.points;
+        } else {
+            continue;
+        }
         if (!adj[a]) adj[a] = [];
         if (!adj[b]) adj[b] = [];
         adj[a].push(b);
         adj[b].push(a);
     }
-    let start = walls[0][0];
+    let start;
+    if (Array.isArray(walls[0])) {
+        start = walls[0][0];
+    } else if (walls[0] && walls[0].points) {
+        start = walls[0].points[0];
+    } else {
+        return [];
+    }
     const poly = [start];
     let prev = null, curr = start;
     while (true) {
@@ -124,10 +140,7 @@ function getPolygonPoints(points, walls) {
         curr = next;
         if (poly.length > points.length + 2) break;
     }
-    if (poly.length >= 3 && adj[poly[poly.length-1]].includes(start)) {
-        return poly.map(i => points[i]);
-    }
-    return convexHull(points);
+    return poly.map(i => points[i]);
 }
 
 // Convex hull (Graham scan)
@@ -233,14 +246,49 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
     // --- Render walls ---
     mapData.layers.forEach((layer, i) => {
         const y = i * layerHeight + wallHeight / 2;
-        const wallSegs = [];
-        for (const [a, b] of layer.walls) {
+        for (const wall of layer.walls) {
+            let a, b, type;
+            if (Array.isArray(wall)) {
+                [a, b] = wall;
+                type = "wall";
+            } else {
+                [a, b] = wall.points;
+                type = wall.type || "wall";
+            }
             const p1 = layer.points[a];
             const p2 = layer.points[b];
-            wallSegs.push([[p1[0], p1[1]], [p2[0], p2[1]]]);
+
+            // Choose material based on type
+            let wallMat;
+            if (type === "door") {
+                wallMat = new BABYLON.StandardMaterial("doorMat", scene);
+                wallMat.diffuseColor = new BABYLON.Color3(1, 0, 0); // Red for doors
+                wallMat.backFaceCulling = false;
+            } else {
+                wallMat = new BABYLON.StandardMaterial("wallMat", scene);
+                wallMat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+                wallMat.backFaceCulling = false;
+            }
+
+            const dx = p2[0] - p1[0];
+            const dz = p2[1] - p1[1];
+            const length = Math.sqrt(dx * dx + dz * dz);
+            const cx = (p1[0] + p2[0]) / 2;
+            const cz = (p1[1] + p2[1]) / 2;
+            const angle = Math.atan2(dz, dx);
+
+            const wallMesh = BABYLON.MeshBuilder.CreateBox("wall", {
+                width: length,
+                height: wallHeight,
+                depth: wallThickness
+            }, scene);
+
+            wallMesh.position = new BABYLON.Vector3(cx, y, cz);
+            wallMesh.rotation = new BABYLON.Vector3(0, -angle, 0);
+            wallMesh.material = wallMat;
+
+            meshes.push(wallMesh);
         }
-        const layerWalls = buildWallsFromArray(scene, wallSegs, { height: wallHeight, thickness: wallThickness, y });
-        meshes.push(...layerWalls);
     });
 
     // --- Render ramps as real ramps (prisms) ---

@@ -107,8 +107,12 @@
       let enemySpawnerMode = false;
       let enemyPreview = null;
       let enemyType = 1; // 1 or 2
-      let enemies = []; // {layer, x, y, type}
+      let enemies = []; // {layer, x, y, type, id}
       let placingDoor = false;
+
+      // Unique ID counters
+      let enemyIdCounter = 1;
+      let doorIdCounter = 1;
 
       // Each layer: { points: [[x,y],...], walls: [[a,b],...], color: "#hex" }
       function createLayer(color = "#222222") {
@@ -135,6 +139,9 @@
         ]);
         layers = [{ points, walls, color: "#222222" }];
         ramps = [];
+        enemies = [];
+        enemyIdCounter = 1;
+        doorIdCounter = 1;
       } else if (wallData && wallData.layers) {
         // Multi-layer format
         layers = wallData.layers.map((l) => ({
@@ -143,9 +150,32 @@
           color: l.color || "#222222",
         }));
         ramps = wallData.ramps || [];
+        enemies = (wallData.enemies || []).map(e => ({
+          ...e,
+          id: typeof e.id === "number" ? e.id : enemyIdCounter++
+        }));
+        // Set enemyIdCounter to max existing id + 1
+        enemyIdCounter = Math.max(1, ...enemies.map(e => e.id || 0)) + 1;
+
+        // Assign door ids if missing, and set doorIdCounter
+        doorIdCounter = 1;
+        for (const layer of layers) {
+          for (const wall of layer.walls) {
+            if (wall.type === "door") {
+              if (typeof wall.id !== "number") {
+                wall.id = doorIdCounter++;
+              } else {
+                doorIdCounter = Math.max(doorIdCounter, wall.id + 1);
+              }
+            }
+          }
+        }
       } else {
         layers = [createLayer()];
         ramps = [];
+        enemies = [];
+        enemyIdCounter = 1;
+        doorIdCounter = 1;
       }
 
       // Convert walls to new format (if necessary)
@@ -318,7 +348,7 @@
           ctx.restore();
         }
 
-        // Draw placed enemies
+        // Draw placed enemies (show their ID)
         for (const enemy of enemies) {
           if (enemy.layer !== currentLayer) continue;
           ctx.save();
@@ -336,6 +366,10 @@
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.fillText(enemy.type, 0, 0);
+          // Draw enemy ID below
+          ctx.font = "12px sans-serif";
+          ctx.fillStyle = "#ff0";
+          ctx.fillText("ID:" + enemy.id, 0, gridSize * 0.35);
           ctx.restore();
         }
 
@@ -368,7 +402,6 @@
           ctx.strokeStyle = l === currentLayer ? "#f00" : "#888";
           ctx.lineWidth = 2;
           for (const wall of layer.walls) {
-            // Support old format for backward compatibility
             let aIdx, bIdx, type;
             if (Array.isArray(wall)) {
               [aIdx, bIdx] = wall;
@@ -377,14 +410,8 @@
               [aIdx, bIdx] = wall.points;
               type = wall.type || "wall";
             }
-            const [ax, ay] = worldToScreen(
-              layer.points[aIdx][0],
-              layer.points[aIdx][1],
-            );
-            const [bx, by] = worldToScreen(
-              layer.points[bIdx][0],
-              layer.points[bIdx][1],
-            );
+            const [ax, ay] = worldToScreen(layer.points[aIdx][0], layer.points[aIdx][1]);
+            const [bx, by] = worldToScreen(layer.points[bIdx][0], layer.points[bIdx][1]);
             ctx.strokeStyle =
               type === "door"
                 ? "#00f"
@@ -395,13 +422,23 @@
             ctx.moveTo(ax, ay);
             ctx.lineTo(bx, by);
             ctx.stroke();
+
+            // Draw door ID at the midpoint
+            if (type === "door" && wall.id !== undefined) {
+              const mx = (ax + bx) / 2, my = (ay + by) / 2;
+              ctx.save();
+              ctx.globalAlpha = 1;
+              ctx.fillStyle = "#ff0";
+              ctx.font = "bold 14px sans-serif";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText("ID:" + wall.id, mx, my - 10);
+              ctx.restore();
+            }
           }
           // Points
           for (let i = 0; i < layer.points.length; i++) {
-            const [x, y] = worldToScreen(
-              layer.points[i][0],
-              layer.points[i][1],
-            );
+            const [x, y] = worldToScreen(layer.points[i][0], layer.points[i][1]);
             ctx.fillStyle =
               l === currentLayer && i === selectedPoint ? "#0f0" : "#fff";
             ctx.beginPath();
@@ -409,75 +446,6 @@
             ctx.fill();
           }
           ctx.restore();
-        }
-
-        // Draw rooms
-        for (let l = 0; l < layers.length; l++) {
-          const layer = layers[l];
-          const rooms = getRoomsAndAssignDoors(layer);
-          const roomColors = generateDistinctColors(rooms.length);
-          rooms.forEach((room, idx) => {
-            ctx.save();
-            ctx.globalAlpha = 0.25;
-            ctx.fillStyle = roomColors[idx];
-            ctx.beginPath();
-            for (let i = 0; i < room.points.length; i++) {
-              const [x, y] = worldToScreen(
-                layer.points[room.points[i]][0],
-                layer.points[room.points[i]][1],
-              );
-              if (i === 0) ctx.moveTo(x, y);
-              else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.fill("evenodd");
-            ctx.restore();
-
-            // Draw room number at centroid
-            let cx = 0,
-              cy = 0;
-            for (const idx of room.points) {
-              cx += layer.points[idx][0];
-              cy += layer.points[idx][1];
-            }
-            cx /= room.points.length;
-            cy /= room.points.length;
-            const [scx, scy] = worldToScreen(cx, cy);
-            ctx.save();
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = "#fff";
-            ctx.font = "bold 20px sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(room.roomId, scx, scy);
-            ctx.restore();
-          });
-
-          // Draw door room assignments
-          for (const wall of layer.walls) {
-            if (wall.type === "door" && wall.rooms && wall.rooms.length) {
-              // Draw room numbers near the door
-              const [aIdx, bIdx] = wall.points;
-              const [ax, ay] = worldToScreen(
-                layer.points[aIdx][0],
-                layer.points[aIdx][1],
-              );
-              const [bx, by] = worldToScreen(
-                layer.points[bIdx][0],
-                layer.points[bIdx][1],
-              );
-              const mx = (ax + bx) / 2,
-                my = (ay + by) / 2;
-              ctx.save();
-              ctx.globalAlpha = 1;
-              ctx.fillStyle = "#ff0";
-              ctx.font = "bold 14px sans-serif";
-              ctx.textAlign = "center";
-              ctx.textBaseline = "middle";
-              ctx.fillText(wall.rooms.join(","), mx, my - 10);
-              ctx.restore();
-            }
-          }
         }
       }
       function worldToScreen(x, y) {
@@ -592,7 +560,6 @@
             moved = true;
           }
           if (e.key === "Enter") {
-            console.log("keydown:", e.key, "rampPreview:", rampPreview);
             pushUndo();
             ramps.push({
               layer: rampPreview.layer,
@@ -649,6 +616,7 @@
               x: enemyPreview.x,
               y: enemyPreview.y,
               type: enemyType,
+              id: enemyIdCounter++ // Assign unique ID
             });
             enemyPreview = null;
             draw();
@@ -731,7 +699,7 @@
         this.classList.toggle("active", rampMode);
       };
 
-      // Enemy Spaner Tool
+      // Enemy Spawner Tool
       document.getElementById("enemySpawnerBtn").onclick = function () {
         enemySpawnerMode = !enemySpawnerMode;
         enemyPreview = null;
@@ -919,15 +887,24 @@
         return {
           layers: layers.map((l) => ({
             points: l.points,
-            walls: l.walls, // now objects with type
+            walls: l.walls.map(wall => {
+              // Remove any 'rooms' property from doors or walls (legacy)
+              if (wall && typeof wall === "object" && "rooms" in wall) {
+                const { rooms, ...rest } = wall;
+                return rest;
+              }
+              return wall;
+            }),
             color: l.color,
           })),
           ramps,
           enemies,
+          enemyIdCounter,
+          doorIdCounter,
         };
       }
+
       document.getElementById("saveBtn").onclick = async function () {
-        console.log("Saving map data:", getMapData());
         await saveWallData(getMapData());
         alert("Map saved!");
       };
@@ -951,174 +928,6 @@
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.restore();
-      }
-
-      function getRoomsAndAssignDoors(layer) {
-        // Build adjacency list using ALL walls (including doors)
-        const adj = {};
-        for (const wall of layer.walls) {
-          const [a, b] = wall.points;
-          if (!adj[a]) adj[a] = [];
-          if (!adj[b]) adj[b] = [];
-          adj[a].push(b);
-          adj[b].push(a);
-        }
-
-        // Prepare: clear all door room assignments
-        for (const wall of layer.walls) {
-          if (wall.type === "door") wall.rooms = [];
-        }
-
-        // --- Find all unique simple cycles (rooms) ---
-        // We'll use a DFS-based approach to find all cycles up to a reasonable length
-        const maxCycleLength = Math.max(12, layer.points.length); // avoid infinite loops
-        const cycles = [];
-        const cyclesSet = new Set();
-
-        function dfs(path, start, curr, depth) {
-          if (depth > maxCycleLength) return;
-          for (const next of adj[curr]) {
-            if (next === start && path.length >= 3) {
-              // Found a cycle
-              // Normalize cycle (smallest index first, clockwise)
-              let cycle = [...path];
-              let minIdx = cycle.indexOf(Math.min(...cycle));
-              cycle = cycle.slice(minIdx).concat(cycle.slice(0, minIdx));
-              // Also check reversed
-              let rev = [...cycle].reverse();
-              let key = cycle.join(",");
-              let revKey = rev.join(",");
-              if (!cyclesSet.has(key) && !cyclesSet.has(revKey)) {
-                cycles.push({ points: [...cycle] });
-                cyclesSet.add(key);
-              }
-            } else if (!path.includes(next)) {
-              dfs([...path, next], start, next, depth + 1);
-            }
-          }
-        }
-
-        for (let i = 0; i < layer.points.length; i++) {
-          dfs([i], i, i, 1);
-        }
-
-        // Assign roomId and avoid duplicates
-        const rooms = [];
-        for (let i = 0; i < cycles.length; i++) {
-          rooms.push({ roomId: i, points: cycles[i].points });
-        }
-
-        // Assign doors to all rooms they border (shared doors get multiple room numbers)
-        for (const wall of layer.walls) {
-          if (wall.type !== "door") continue;
-          wall.rooms = [];
-          for (const room of rooms) {
-            // If both door points are in the room polygon, it's a border
-            if (
-              room.points.includes(wall.points[0]) &&
-              room.points.includes(wall.points[1])
-            ) {
-              wall.rooms.push(room.roomId);
-            }
-          }
-        }
-
-        // Debug output
-        console.log("Detected rooms (cycles):");
-        rooms.forEach((room, idx) => {
-          console.log(`Room ${idx}:`, room.points);
-        });
-
-        // Filter out non-minimal rooms
-        const minimalRooms = rooms.filter(
-          (room, idx, arr) =>
-            !arr.some(
-              (other, j) =>
-                j !== idx &&
-                other.points.length < room.points.length &&
-                other.points.every((p) => room.points.includes(p)),
-            ),
-        );
-        return minimalRooms;
-      }
-
-      // Generate N distinct colors (HSL)
-      function generateDistinctColors(n) {
-        const colors = [];
-        for (let i = 0; i < n; i++) {
-          const hue = Math.round((360 * i) / n);
-          colors.push(`hsl(${hue}, 90%, 60%)`);
-        }
-        return colors;
-      }
-
-      // In your draw() function, after drawOrigin():
-      for (let l = 0; l < layers.length; l++) {
-        const layer = layers[l];
-        const rooms = getRoomsAndAssignDoors(layer);
-        const roomColors = generateDistinctColors(rooms.length);
-        rooms.forEach((room, idx) => {
-          ctx.save();
-          ctx.globalAlpha = 0.25;
-          ctx.fillStyle = roomColors[idx];
-          ctx.beginPath();
-          for (let i = 0; i < room.points.length; i++) {
-            const [x, y] = worldToScreen(
-              layer.points[room.points[i]][0],
-              layer.points[room.points[i]][1],
-            );
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-          ctx.closePath();
-          ctx.fill("evenodd");
-          ctx.restore();
-
-          // Draw room number at centroid
-          let cx = 0,
-            cy = 0;
-          for (const idx of room.points) {
-            cx += layer.points[idx][0];
-            cy += layer.points[idx][1];
-          }
-          cx /= room.points.length;
-          cy /= room.points.length;
-          const [scx, scy] = worldToScreen(cx, cy);
-          ctx.save();
-          ctx.globalAlpha = 1;
-          ctx.fillStyle = "#fff";
-          ctx.font = "bold 20px sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(room.roomId, scx, scy);
-          ctx.restore();
-        });
-
-        // Draw door room assignments
-        for (const wall of layer.walls) {
-          if (wall.type === "door" && wall.rooms && wall.rooms.length) {
-            // Draw room numbers near the door
-            const [aIdx, bIdx] = wall.points;
-            const [ax, ay] = worldToScreen(
-              layer.points[aIdx][0],
-              layer.points[aIdx][1],
-            );
-            const [bx, by] = worldToScreen(
-              layer.points[bIdx][0],
-              layer.points[bIdx][1],
-            );
-            const mx = (ax + bx) / 2,
-              my = (ay + by) / 2;
-            ctx.save();
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = "#ff0";
-            ctx.font = "bold 14px sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(wall.rooms.join(","), mx, my - 10);
-            ctx.restore();
-          }
-        }
       }
     </script>
   </body>
