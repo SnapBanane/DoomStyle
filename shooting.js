@@ -8,7 +8,8 @@ export function rayCastShoot(scene, camera) {
 
   const ray = new BABYLON.Ray(rayOrigin, forward, rayLength);
 
-  const hit = scene.pickWithRay(ray);
+  // Use a predicate to allow picking invisible but pickable meshes
+  const hit = scene.pickWithRay(ray, (mesh) => mesh.isPickable);
 
   if (hit && hit.pickedMesh) {
     // Check if the hit mesh is part of an enemy (either hitbox or part of enemy)

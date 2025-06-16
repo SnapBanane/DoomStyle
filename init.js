@@ -6,6 +6,7 @@ import { aiForEnemy0 } from "./enemy/enemy-0.js";
 import { aiForEnemy1 } from "./enemy/enemy-1.js";
 import { updateHealth, GUI, damagePlayer } from "./map/GUI.js";
 import { buildEnemyMap } from "./map/mapConstructor.js";
+import { treasureChest } from "./map/treasureChest.js";
 import {
   openDoorsIfRoomCleared,
   resetAllEnemiesAlive,
@@ -64,6 +65,19 @@ export async function startGame() {
     const mesh = aiForEnemy1(scene, x, y, z, id);
     writeDEBUG("spawnEnemy1 mesh", mesh);
     return mesh;
+  };
+
+  window.createTreasureChest = (x, y, z) => {
+    writeDEBUG("createTreasureChest args", { x, y, z });
+    if (typeof x !== "number" || typeof y !== "number" || typeof z !== "number") {
+      writeERROR(
+        "Invalid arguments. Use the format: createTreasureChest(x, y, z)",
+      );
+      return;
+    }
+    const chest = treasureChest(scene, x, y, z);
+    writeDEBUG("createTreasureChest chest", chest);
+    return chest;
   };
 
   writeLOG("Calling createScene...");
