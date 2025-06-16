@@ -12,6 +12,7 @@ if (window.BABYLON && window.earcut) {
 }
 
 import { initShadowEngine } from "./shadow-engine.js";
+import { treasureChest } from "./treasureChest.js";
 import {
   buildMultiLayerMap,
   fetchWallData,
