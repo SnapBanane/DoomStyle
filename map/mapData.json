@@ -2079,7 +2079,7 @@
       "y": -180,
       "type": 2,
       "id": 4,
-      "alive": false,
+      "alive": true,
       "room": "1"
     },
     {
@@ -2088,7 +2088,7 @@
       "y": 180,
       "type": 2,
       "id": 5,
-      "alive": false,
+      "alive": true,
       "room": "1"
     },
     {
@@ -2106,7 +2106,7 @@
       "y": -180,
       "type": 1,
       "id": 9,
-      "alive": false,
+      "alive": true,
       "room": "2"
     },
     {
@@ -2115,7 +2115,7 @@
       "y": 60,
       "type": 1,
       "id": 10,
-      "alive": false,
+      "alive": true,
       "room": "2"
     }
   ],
