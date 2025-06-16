@@ -1,5 +1,5 @@
 import { openDoorsIfRoomCleared } from "../map/enemyRoomHandler.js";
-import { allEnemyMeshes, allDoorMeshes } from "../init.js";
+import { allDoorMeshes } from "../init.js";
 import { writeDEBUG, writeLOG } from "../DevKit/niceLogs.js";
 
 export async function enemyDeath(enemy, enemyHealth) {
@@ -50,8 +50,6 @@ export async function enemyDeath(enemy, enemyHealth) {
         name: enemy.name,
       });
 
-      openDoorsIfRoomCleared(allEnemyMeshes, allDoorMeshes);
-
       // --- Use gameId instead of id ---
       const lookupId = enemy.gameId !== undefined ? enemy.gameId : enemy.id;
       if (lookupId !== undefined) {
@@ -82,6 +80,9 @@ export async function enemyDeath(enemy, enemyHealth) {
             // --- Synchronize mesh state with map data ---
             enemy.alive = false;
             enemy.isDead = true;
+
+            // --- Use mapData.enemies for door logic ---
+            openDoorsIfRoomCleared(mapData.enemies, allDoorMeshes);
           } else {
             writeDEBUG("enemyDeath", `No mapEnemy found for id ${lookupId}`);
           }

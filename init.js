@@ -167,8 +167,12 @@ export async function startGame() {
   writeLOG("Game initialization complete.");
   writeLOG("===========================================");
 
-  setInterval(() => {
-    openDoorsIfRoomCleared(allEnemyMeshes, allDoorMeshes);
+  setInterval(async () => {
+    const res = await fetch("/map/wallData");
+    if (res.ok) {
+      const mapData = await res.json();
+      openDoorsIfRoomCleared(mapData.enemies, allDoorMeshes);
+    }
   }, 1000);
 }
 
