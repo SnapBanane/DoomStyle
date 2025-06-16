@@ -17,6 +17,14 @@ The main features include:
 - Project statistics script for README
 - Gameplay with enemy killing to unlock new rooms
 
+## Development Team
+
+- **SnapBanane** - ~45 hours
+- **GamekniteC7** - ~26 hours  
+- **PlutoEdiMedi** - ~15 hours
+
+**Total development time: ~86 hours**
+
 ## Disclaimer
 
 This project is for educational and non-commercial use.  
@@ -75,4 +83,4 @@ For larger changes, please discuss with the maintainer first.
 ---
 
 **MIT License**  
-See [LICENSE](LICENSE) for
+See [LICENSE](LICENSE)
