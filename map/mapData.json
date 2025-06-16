@@ -2061,7 +2061,7 @@
       "y": 100,
       "type": 2,
       "id": 2,
-      "alive": false,
+      "alive": true,
       "room": "1"
     },
     {
@@ -2070,7 +2070,7 @@
       "y": -100,
       "type": 2,
       "id": 3,
-      "alive": false,
+      "alive": true,
       "room": "1"
     },
     {

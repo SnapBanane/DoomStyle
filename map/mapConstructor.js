@@ -253,9 +253,12 @@ function createRampMesh(scene, x, y, z, width, height, depth, angle) {
   mesh.position = new BABYLON.Vector3(x, y, z);
   mesh.rotation = new BABYLON.Vector3(0, -angle, 0);
 
-  // Material
+  // Material with solid color (no texture, no gloss)
   const mat = new BABYLON.StandardMaterial("rampMat", scene);
-  mat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+  mat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4); // Example: medium gray
+  mat.specularColor = new BABYLON.Color3(0, 0, 0); // No gloss/glacing
+  mat.emissiveColor = new BABYLON.Color3(0, 0, 0);
+  mat.ambientColor = new BABYLON.Color3(0, 0, 0);
   mat.backFaceCulling = false;
   mesh.material = mat;
 
@@ -276,6 +279,8 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
   const layerHeight = options.layerHeight || 4;
   const wallHeight = options.wallHeight || 4;
   const wallThickness = options.wallThickness || 0.5;
+  const wallTextureScaleU = options.wallTextureScaleU || 1; // Default U scaling
+  const wallTextureScaleV = options.wallTextureScaleV || 1; // Default V scaling
 
   if (!mapData.layers) {
     writeDEBUG("buildMultiLayerMap", "No layers in mapData");
@@ -301,11 +306,13 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
       let wallMat;
       if (type === "door") {
         wallMat = new BABYLON.StandardMaterial("doorMat", scene);
-        wallMat.diffuseColor = new BABYLON.Color3(1, 0, 0); // Red for doors
+        const doorTexture = new BABYLON.Texture("../img/Textures/door.png", scene);
+        wallMat.diffuseTexture = doorTexture;
         wallMat.backFaceCulling = false;
       } else {
         wallMat = new BABYLON.StandardMaterial("wallMat", scene);
-        wallMat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+        const wallTexture = new BABYLON.Texture("../img/Textures/wall.jpg", scene);
+        wallMat.diffuseTexture = wallTexture;
         wallMat.backFaceCulling = false;
       }
 
@@ -322,9 +329,16 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
           width: length,
           height: wallHeight,
           depth: wallThickness,
+          wrap: true, // Important for texture wrapping on sides
         },
         scene,
       );
+
+      // Adjust texture scaling for non-door walls
+      if (type !== "door" && wallMat.diffuseTexture) {
+        wallMat.diffuseTexture.uScale = length / wallTextureScaleU;
+        wallMat.diffuseTexture.vScale = wallHeight / wallTextureScaleV;
+      }
 
       wallMesh.position = new BABYLON.Vector3(cx, y, cz);
       wallMesh.rotation = new BABYLON.Vector3(0, -angle, 0);
