@@ -121,7 +121,6 @@ function damagePlayer(amount) {
   window.player.health = Math.max(0, window.player.health - amount);
   updateHealth(window.player.health);
   if (window.player.health <= 0) {
-
     onPlayerDeathAlert(() => {
       // Reset and reinitiate the game
       if (window.location && window.location.reload) {

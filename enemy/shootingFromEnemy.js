@@ -3,7 +3,11 @@ import { damagePlayer } from "../map/GUI.js";
 import { allWallMeshes, allFloorMeshes, allRampMeshes } from "../init.js";
 
 export function rayCastShootFromEnemy(scene, enemy) {
-  const allBlockerMeshes = [...allWallMeshes, ...allFloorMeshes, ...allRampMeshes];
+  const allBlockerMeshes = [
+    ...allWallMeshes,
+    ...allFloorMeshes,
+    ...allRampMeshes,
+  ];
   // Get world position of the gunAssembly's muzzle
   const muzzleLocalPosition = new BABYLON.Vector3(0, 0.15, 2); // Match muzzle position from GunModel.js
   const muzzleWorld = BABYLON.Vector3.TransformCoordinates(

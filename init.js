@@ -128,7 +128,7 @@ export async function startGame() {
   await resetAllEnemiesAlive(scene);
   writeDEBUG("resetAllEnemiesAlive called", allEnemyMeshes);
 
-  allEnemyMeshes.forEach(enemy => {
+  allEnemyMeshes.forEach((enemy) => {
     enemy.isDead = false;
     enemy.alive = true;
     if (enemy.health !== undefined) enemy.health = 50;
@@ -193,6 +193,11 @@ function initBodyPhysics(scene) {
       scene,
     );
     element.chechCollisions = true;
-    writeDEBUG("Physics aggregate for mesh", { name: element.name, shapeType, mass, restitution });
+    writeDEBUG("Physics aggregate for mesh", {
+      name: element.name,
+      shapeType,
+      mass,
+      restitution,
+    });
   });
 }

@@ -24,7 +24,7 @@ Do not use any part of this project for malicious purposes.
 
 ## Preview
 
-![Editor Screenshot](img/screenshots/editor.png)  
+![Editor Screenshot](img/screenshots/editor.png)
 
 ## Installation
 
@@ -46,11 +46,13 @@ Open the Webserver via `node server` (requires node.js to work) and play the map
 - Use the included PowerShell script (`stats.ps1`) to generate project statistics for your README.
 
 On Windows run:
+
 ```sh
 .\boot.ps1
 ```
 
 On Linux use:`
+
 ```sh
 chmod +x boot.sh # for permissions
 ./boot.sh

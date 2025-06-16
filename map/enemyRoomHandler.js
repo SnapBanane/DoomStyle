@@ -30,7 +30,7 @@ async function resetAllEnemiesAlive() {
  */
 export function openDoorsIfRoomCleared(mapEnemies, doorMeshes) {
   const aliveCount = Array.isArray(mapEnemies)
-    ? mapEnemies.filter(e => e.alive !== false).length
+    ? mapEnemies.filter((e) => e.alive !== false).length
     : 0;
 
   writeDEBUG("openDoorsIfRoomCleared called", {
@@ -40,7 +40,9 @@ export function openDoorsIfRoomCleared(mapEnemies, doorMeshes) {
   });
 
   if (!Array.isArray(mapEnemies) || !Array.isArray(doorMeshes)) {
-    console.error("Invalid arguments: expected arrays for mapEnemies and doorMeshes");
+    console.error(
+      "Invalid arguments: expected arrays for mapEnemies and doorMeshes",
+    );
     return;
   }
   // Group enemies by room

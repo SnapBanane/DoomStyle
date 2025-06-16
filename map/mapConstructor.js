@@ -1,6 +1,12 @@
 import { aiForEnemy0 } from "../enemy/enemy-0.js";
 import { aiForEnemy1 } from "../enemy/enemy-1.js";
-import { allEnemyMeshes, allDoorMeshes, allWallMeshes, allFloorMeshes, allRampMeshes } from "../init.js";
+import {
+  allEnemyMeshes,
+  allDoorMeshes,
+  allWallMeshes,
+  allFloorMeshes,
+  allRampMeshes,
+} from "../init.js";
 import { writeDEBUG, writeLOG } from "../DevKit/niceLogs.js";
 
 const scale = 12.5; // Match this to your editor's gridSize
