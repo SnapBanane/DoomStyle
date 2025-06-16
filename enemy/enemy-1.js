@@ -80,6 +80,9 @@ export function aiForEnemy1(scene, x, y, z, id) {
     hitBox.gameId = id; // Assign the provided id to the hitbox
 
     enemy.aiObserver = scene.onBeforeRenderObservable.add(() => {
+      // Prevent any logic if enemy is dead or not alive
+      if (hitBox.isDead || hitBox.alive === false) return;
+
       if (hitBox.health <= 0) {
         scene.onBeforeRenderObservable.remove(enemy.aiObserver);
         return;

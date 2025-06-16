@@ -26,6 +26,9 @@ export function aiForEnemy0(scene, x, y, z) {
   enemy.isActive = false;
 
   scene.onBeforeRenderObservable.add(() => {
+    // Prevent any logic if enemy is dead or not alive
+    if (enemy.isDead || enemy.alive === false) return;
+
     if (!player) return;
 
     const distanceToPlayer = BABYLON.Vector3.Distance(
