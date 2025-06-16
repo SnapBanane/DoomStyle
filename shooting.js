@@ -21,9 +21,6 @@ export function rayCastShoot(scene, camera) {
 
     // Set the hit flag on the appropriate mesh
     targetMesh.isHit = true;
-    console.log("Hit object:", targetMesh.name);
-  } else {
-    console.log("No object hit by the ray.");
   }
 
   const rayLine = BABYLON.MeshBuilder.CreateLines(

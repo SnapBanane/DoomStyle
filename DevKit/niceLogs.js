@@ -2,9 +2,7 @@
 // niceLogs v0.1 developed by SnapBanane
 //
 
-//
-// Functions:
-//
+let debug = true; // Set this to true to enable debug logs
 
 function writeERROR(message) {
   const timestamp = new Date().toISOString();
@@ -12,6 +10,7 @@ function writeERROR(message) {
 }
 
 function writeDEBUG(variableName, variableValue) {
+  if (!debug) return;
   const timestamp = new Date().toISOString();
   console.debug(`[DEBUG] [${timestamp}] ${variableName}:`, variableValue);
 }
@@ -21,4 +20,4 @@ function writeLOG(message) {
   console.log(`[LOG] [${timestamp}] ${message}`);
 }
 
-export { writeERROR, writeDEBUG, writeLOG };
+export { writeERROR, writeDEBUG, writeLOG, debug };

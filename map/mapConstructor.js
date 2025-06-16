@@ -1,6 +1,7 @@
 import { aiForEnemy0 } from "../enemy/enemy-0.js";
 import { aiForEnemy1 } from "../enemy/enemy-1.js";
-import { allEnemyMeshes, allDoorMeshes } from "../init.js";
+import { allEnemyMeshes, allDoorMeshes, allWallMeshes, allFloorMeshes, allRampMeshes } from "../init.js";
+import { writeDEBUG, writeLOG } from "../DevKit/niceLogs.js";
 
 const scale = 12.5; // Match this to your editor's gridSize
 
@@ -263,13 +264,17 @@ function createRampMesh(scene, x, y, z, width, height, depth, angle) {
  * @returns {BABYLON.Mesh[]} Array of all wall meshes.
  */
 export function buildMultiLayerMap(scene, mapData, options = {}) {
+  writeLOG("Building multi-layer map...");
   const meshes = [];
-  const gridSize = 1; // <-- Move this to the top!
+  const gridSize = 1;
   const layerHeight = options.layerHeight || 4;
   const wallHeight = options.wallHeight || 4;
   const wallThickness = options.wallThickness || 0.5;
 
-  if (!mapData.layers) return meshes;
+  if (!mapData.layers) {
+    writeDEBUG("buildMultiLayerMap", "No layers in mapData");
+    return meshes;
+  }
 
   // --- Render walls ---
   mapData.layers.forEach((layer, i) => {
@@ -323,21 +328,26 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
       if (type === "door" && wall.id !== undefined) {
         wallMesh.doorId = wall.id;
         wallMesh.room = wall.room;
-
-        // Add to allDoorMeshes
         allDoorMeshes.push(wallMesh);
       }
-
+      allWallMeshes.push(wallMesh);
       meshes.push(wallMesh);
+
+      writeDEBUG("Wall mesh created", {
+        layer: i,
+        type,
+        position: wallMesh.position,
+        rotation: wallMesh.rotation,
+        id: wallMesh.doorId || undefined,
+      });
     }
   });
 
   // --- Render ramps as real ramps (prisms) ---
   if (mapData.ramps) {
     for (const ramp of mapData.ramps) {
-      const rampHeight = layerHeight * 2; // Adjust height based on layer
+      const rampHeight = layerHeight * 2;
       const y = ramp.layer;
-      // width and depth can be adjusted as needed
       const width = gridSize * 4;
       const depth = gridSize * 4;
       const mesh = createRampMesh(
@@ -350,7 +360,18 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
         depth / 2,
         ramp.angle,
       );
+      allRampMeshes.push(mesh);
       meshes.push(mesh);
+
+      writeDEBUG("Ramp mesh created", {
+        x: ramp.x,
+        y: y,
+        z: ramp.y,
+        width: width / 2,
+        height: rampHeight / 2,
+        depth: depth / 2,
+        angle: ramp.angle,
+      });
     }
   }
 
@@ -358,10 +379,8 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
   const floorThickness = 0.1 * gridSize;
   mapData.layers.forEach((layer, i) => {
     if (i === 0) return; // Skip the most bottom layer
-    // Get the polygon points for this layer
     const poly2d = getPolygonPoints(layer.points, layer.walls);
     if (poly2d && poly2d.length >= 3) {
-      // Place the floor so its top is 0.1 below the top of the walls
       const y = i * layerHeight + wallHeight - wallHeight - floorThickness / 2;
       const mesh = createConvexFloor(
         scene,
@@ -373,11 +392,21 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
       );
       if (mesh) {
         mesh.material.backFaceCulling = false;
+        allFloorMeshes.push(mesh);
         meshes.push(mesh);
+
+        writeDEBUG("Floor mesh created", {
+          layer: i,
+          y,
+          color: layer.color,
+          thickness: floorThickness,
+          points: poly2d,
+        });
       }
     }
   });
 
+  writeLOG("Multi-layer map build complete.");
   return meshes;
 }
 
@@ -447,7 +476,9 @@ function createConvexFloor(scene, points, y, color, thickness = 1, scale = 1) {
  * @param {Object} [options] - Optional: {layerHeight}
  */
 export function buildEnemyMap(scene, mapData, options = {}) {
+  writeLOG("Building enemy map...");
   if (!mapData.enemies || !Array.isArray(mapData.enemies)) {
+    writeDEBUG("buildEnemyMap", "No enemies in mapData");
     return;
   }
 
@@ -456,7 +487,10 @@ export function buildEnemyMap(scene, mapData, options = {}) {
   for (const enemy of mapData.enemies) {
     let x = enemy.x;
     let z = enemy.y;
-    let y = (enemy.layer || 0) * layerHeight;
+    // Move the enemy one layer down
+    let layer = (enemy.layer || 0) - 0.5;
+    if (layer < 0) layer = 0; // Prevent negative layers
+    let y = layer * layerHeight;
     const id = enemy.id;
     const type = enemy.type;
 
@@ -482,6 +516,7 @@ export function buildEnemyMap(scene, mapData, options = {}) {
       mesh.mapDataIndex = mapData.enemies.indexOf(enemy);
       mesh.alive = enemy.alive !== false;
       mesh.room = enemy.room;
+      mesh.layer = layer; // Store the new layer
 
       // Add a method or property to print id when damaged
       mesh.onDamage = function () {
@@ -489,6 +524,16 @@ export function buildEnemyMap(scene, mapData, options = {}) {
       };
 
       allEnemyMeshes.push(mesh);
+
+      writeDEBUG("Enemy mesh created", {
+        id,
+        type,
+        position: { x, y, z },
+        layer,
+        alive: mesh.alive,
+        room: mesh.room,
+      });
     }
   }
+  writeLOG("Enemy map build complete.");
 }

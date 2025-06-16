@@ -1,6 +1,9 @@
 import { damagePlayer } from "../map/GUI.js";
+// Import or define allBlockerMeshes (walls, floors, ramps)
+import { allWallMeshes, allFloorMeshes, allRampMeshes } from "../init.js";
 
 export function rayCastShootFromEnemy(scene, enemy) {
+  const allBlockerMeshes = [...allWallMeshes, ...allFloorMeshes, ...allRampMeshes];
   // Get world position of the gunAssembly's muzzle
   const muzzleLocalPosition = new BABYLON.Vector3(0, 0.15, 2); // Match muzzle position from GunModel.js
   const muzzleWorld = BABYLON.Vector3.TransformCoordinates(
@@ -21,26 +24,32 @@ export function rayCastShootFromEnemy(scene, enemy) {
   const rayOrigin = muzzleWorld.add(forward.scale(offsetDistance));
   const ray = new BABYLON.Ray(rayOrigin, forward, rayLength);
 
-  const hit = scene.pickWithRay(ray);
+  // Only allow the ray to hit the player if no wall/floor/ramp is in the way
+  const hit = scene.pickWithRay(ray, (mesh) => {
+    // Only consider collisions with blockers or the player
+    return allBlockerMeshes.includes(mesh) || mesh.name === "player";
+  });
 
   if (hit && hit.pickedMesh) {
-    console.log("Enemy hit object:", hit.pickedMesh.name);
-
-    // If the hit object is the player, call damagePlayer
     if (hit.pickedMesh.name === "player") {
       damagePlayer(30);
     } else {
-      hit.pickedMesh.isHit = true; // Set a custom flag on the target
+      // Ray hit a wall, floor, or ramp before the player
     }
   } else {
-    console.log("Enemy ray missed.");
   }
 
-  // Optional: visualize the ray for debugging
+  // Draw debug line to the hit point
+  let endPoint;
+  if (hit && hit.hit && hit.pickedPoint) {
+    endPoint = hit.pickedPoint;
+  } else {
+    endPoint = rayOrigin.add(forward.scale(rayLength));
+  }
   const rayLine = BABYLON.MeshBuilder.CreateLines(
     "rayLine",
     {
-      points: [rayOrigin, rayOrigin.add(forward.scale(rayLength))],
+      points: [rayOrigin, endPoint],
     },
     scene,
   );

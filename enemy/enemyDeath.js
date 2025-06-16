@@ -1,5 +1,6 @@
 import { openDoorsIfRoomCleared } from "../map/enemyRoomHandler.js";
 import { allEnemyMeshes, allDoorMeshes } from "../init.js";
+import { writeDEBUG, writeLOG } from "../DevKit/niceLogs.js";
 
 export async function enemyDeath(enemy, enemyHealth) {
   if (enemy.isHit) {
@@ -40,6 +41,15 @@ export async function enemyDeath(enemy, enemyHealth) {
       }
 
       enemy.isDead = true;
+      writeDEBUG("enemyDeath", {
+        id: enemy.id,
+        gameId: enemy.gameId,
+        isDead: enemy.isDead,
+        health: enemy.health,
+        position: enemy.position,
+        name: enemy.name,
+      });
+
       openDoorsIfRoomCleared(allEnemyMeshes, allDoorMeshes);
 
       // --- Use gameId instead of id ---
@@ -56,15 +66,27 @@ export async function enemyDeath(enemy, enemyHealth) {
           if (mapEnemy) {
             mapEnemy.alive = false;
 
+            writeDEBUG("enemyDeath mapData update", {
+              lookupId,
+              mapEnemy,
+              mapDataEnemies: mapData.enemies,
+            });
+
             const saveRes = await fetch("/map/wallData", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(mapData, null, 2),
             });
             if (!saveRes.ok) throw new Error("Failed to save map data");
+
+            // --- Synchronize mesh state with map data ---
+            enemy.alive = false;
+            enemy.isDead = true;
+          } else {
+            writeDEBUG("enemyDeath", `No mapEnemy found for id ${lookupId}`);
           }
         } catch (err) {
-          // Server update error ignored
+          writeDEBUG("enemyDeath", `Server update error: ${err}`);
         }
       }
     }

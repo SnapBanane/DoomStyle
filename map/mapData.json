@@ -449,6 +449,10 @@
         [
           -720,
           80
+        ],
+        [
+          280,
+          -40
         ]
       ],
       "walls": [
@@ -1221,6 +1225,15 @@
             99
           ],
           "type": "wall"
+        },
+        {
+          "points": [
+            17,
+            4
+          ],
+          "type": "door",
+          "id": 1,
+          "room": "1"
         }
       ],
       "color": "#408080"
@@ -2023,7 +2036,53 @@
       "angle": 3.141592653589793
     }
   ],
-  "enemies": [],
-  "enemyIdCounter": 8,
-  "doorIdCounter": 3
+  "enemies": [
+    {
+      "layer": 1,
+      "x": -260,
+      "y": 100,
+      "type": 2,
+      "id": 2,
+      "alive": false,
+      "room": "1"
+    },
+    {
+      "layer": 1,
+      "x": -260,
+      "y": -100,
+      "type": 2,
+      "id": 3,
+      "alive": true,
+      "room": "1"
+    },
+    {
+      "layer": 0,
+      "x": -140,
+      "y": -180,
+      "type": 2,
+      "id": 4,
+      "alive": true,
+      "room": "1"
+    },
+    {
+      "layer": 0,
+      "x": -140,
+      "y": 180,
+      "type": 2,
+      "id": 5,
+      "alive": true,
+      "room": "1"
+    },
+    {
+      "layer": 1,
+      "x": -340,
+      "y": 100,
+      "type": 1,
+      "id": 8,
+      "alive": false,
+      "room": "1"
+    }
+  ],
+  "enemyIdCounter": 9,
+  "doorIdCounter": 2
 }

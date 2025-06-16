@@ -1,6 +1,9 @@
+import { writeDEBUG } from "../DevKit/niceLogs.js";
+
 let updateHealth = function () {};
 
 const GUI = (scene) => {
+  writeDEBUG("GUI", "Initializing GUI...");
   const advancedTexture =
     BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
@@ -38,6 +41,7 @@ const GUI = (scene) => {
   healthBarContainer.addControl(healthBarGreen);
 
   updateHealth = function (value) {
+    writeDEBUG("updateHealth", value);
     const percent = Math.max(0, Math.min(100, value));
     healthBarGreen.width = percent + "%";
   };
@@ -89,10 +93,12 @@ const GUI = (scene) => {
     "img/MCGUN1/MCGUN1_frame3.png",
   ];
 
+  writeDEBUG("GUI initialized", { advancedTexture, gunImage, frames });
   return { advancedTexture, gunImage, frames, updateHealth };
 };
 
 function switchFrame(gunImage, frames) {
+  writeDEBUG("switchFrame", { gunImage, frames });
   let currentFrame = 0;
   const startFrame = currentFrame;
   let frameIndex = 1;
@@ -113,12 +119,8 @@ function damagePlayer(amount) {
   }
   const oldHealth = window.player.health;
   window.player.health = Math.max(0, window.player.health - amount);
-  console.log(
-    `damagePlayer: Damaged player by ${amount}. Health: ${oldHealth} -> ${window.player.health}`,
-  );
   updateHealth(window.player.health);
   if (window.player.health <= 0) {
-    console.log("damagePlayer: Player died.");
 
     onPlayerDeathAlert(() => {
       // Reset and reinitiate the game
