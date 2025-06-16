@@ -1234,6 +1234,24 @@
           "type": "door",
           "id": 1,
           "room": "1"
+        },
+        {
+          "points": [
+            80,
+            25
+          ],
+          "type": "door",
+          "room": "2",
+          "id": 2
+        },
+        {
+          "points": [
+            32,
+            34
+          ],
+          "type": "door",
+          "room": "2",
+          "id": 3
         }
       ],
       "color": "#408080"
@@ -2081,8 +2099,26 @@
       "id": 8,
       "alive": false,
       "room": "1"
+    },
+    {
+      "layer": 0,
+      "x": 620,
+      "y": -180,
+      "type": 1,
+      "id": 9,
+      "alive": false,
+      "room": "2"
+    },
+    {
+      "layer": 0,
+      "x": 740,
+      "y": 60,
+      "type": 1,
+      "id": 10,
+      "alive": false,
+      "room": "2"
     }
   ],
-  "enemyIdCounter": 9,
-  "doorIdCounter": 2
+  "enemyIdCounter": 11,
+  "doorIdCounter": 4
 }
