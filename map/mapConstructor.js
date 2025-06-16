@@ -437,10 +437,8 @@ function createConvexFloor(scene, points, y, color, thickness = 1, scale = 1) {
   for (let i = 1; i < n - 1; i++) {
     indices.push(0, i, i + 1);
   }
-  // Bottom face (fan, reversed winding)
-  for (let i = 1; i < n - 1; i++) {
-    indices.push(n, n + i + 1, n + i);
-  }
+  // (No bottom face)
+
   // Side faces
   for (let i = 0; i < n; i++) {
     const next = (i + 1) % n;
@@ -460,17 +458,25 @@ function createConvexFloor(scene, points, y, color, thickness = 1, scale = 1) {
   vertexData.normals = [];
   BABYLON.VertexData.ComputeNormals(positions, indices, vertexData.normals);
 
+  // Add UVs for texture mapping (simple planar mapping)
+  const uvs = [];
+  for (const [x, z] of points) {
+    uvs.push(x * 0.1, z * 0.1); // top
+  }
+  for (const [x, z] of points) {
+    uvs.push(x * 0.1, z * 0.1); // bottom
+  }
+  vertexData.uvs = uvs;
+
   const mesh = new BABYLON.Mesh("convexFloor", scene);
   vertexData.applyToMesh(mesh);
 
   const mat = new BABYLON.StandardMaterial("floorMat", scene);
-  if (color && color.startsWith("#")) {
-    const r = parseInt(color.substr(1, 2), 16) / 255;
-    const g = parseInt(color.substr(3, 2), 16) / 255;
-    const b = parseInt(color.substr(5, 2), 16) / 255;
-    mat.diffuseColor = new BABYLON.Color3(r, g, b);
-  }
-  mat.backFaceCulling = false;
+  const texture = new BABYLON.Texture("img/Textures/ground.jpg", scene);
+  texture.uScale = 8;
+  texture.vScale = 8;
+  mat.diffuseTexture = texture;
+  mat.backFaceCulling = true; // Only show top faces
   mesh.material = mat;
   return mesh;
 }
