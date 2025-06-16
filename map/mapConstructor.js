@@ -306,12 +306,18 @@ export function buildMultiLayerMap(scene, mapData, options = {}) {
       let wallMat;
       if (type === "door") {
         wallMat = new BABYLON.StandardMaterial("doorMat", scene);
-        const doorTexture = new BABYLON.Texture("../img/Textures/door.png", scene);
+        const doorTexture = new BABYLON.Texture(
+          "../img/Textures/door.png",
+          scene,
+        );
         wallMat.diffuseTexture = doorTexture;
         wallMat.backFaceCulling = false;
       } else {
         wallMat = new BABYLON.StandardMaterial("wallMat", scene);
-        const wallTexture = new BABYLON.Texture("../img/Textures/wall.jpg", scene);
+        const wallTexture = new BABYLON.Texture(
+          "../img/Textures/wall.jpg",
+          scene,
+        );
         wallMat.diffuseTexture = wallTexture;
         wallMat.backFaceCulling = false;
       }

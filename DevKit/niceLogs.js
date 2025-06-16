@@ -2,7 +2,7 @@
 // niceLogs v0.1 developed by SnapBanane
 //
 
-let debug = true; // Set this to true to enable debug logs
+let debug = false; // Set this to true to enable debug logs
 
 function writeERROR(message) {
   const timestamp = new Date().toISOString();
