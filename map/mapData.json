@@ -2115,7 +2115,7 @@
       "y": 180,
       "type": 2,
       "id": 5,
-      "alive": false,
+      "alive": true,
       "room": "1"
     },
     {
@@ -2133,7 +2133,7 @@
       "y": -180,
       "type": 1,
       "id": 9,
-      "alive": false,
+      "alive": true,
       "room": "2"
     },
     {
@@ -2142,7 +2142,7 @@
       "y": 60,
       "type": 1,
       "id": 10,
-      "alive": false,
+      "alive": true,
       "room": "2"
     },
     {
@@ -2151,7 +2151,7 @@
       "y": 260,
       "type": 2,
       "id": 11,
-      "alive": false,
+      "alive": true,
       "room": "3"
     },
     {
@@ -2160,7 +2160,7 @@
       "y": 260,
       "type": 2,
       "id": 12,
-      "alive": false,
+      "alive": true,
       "room": "3"
     },
     {
@@ -2169,7 +2169,7 @@
       "y": -500,
       "type": 1,
       "id": 13,
-      "alive": false,
+      "alive": true,
       "room": "4"
     },
     {
@@ -2178,7 +2178,7 @@
       "y": -380,
       "type": 1,
       "id": 14,
-      "alive": false,
+      "alive": true,
       "room": "4"
     },
     {
@@ -2187,7 +2187,7 @@
       "y": -500,
       "type": 2,
       "id": 15,
-      "alive": false,
+      "alive": true,
       "room": "4"
     },
     {
@@ -2196,7 +2196,7 @@
       "y": -420,
       "type": 1,
       "id": 16,
-      "alive": false,
+      "alive": true,
       "room": "5"
     },
     {
@@ -2205,7 +2205,7 @@
       "y": -60,
       "type": 2,
       "id": 17,
-      "alive": false,
+      "alive": true,
       "room": "6"
     },
     {
@@ -2214,7 +2214,7 @@
       "y": 60,
       "type": 2,
       "id": 18,
-      "alive": false,
+      "alive": true,
       "room": "6"
     },
     {
@@ -2223,7 +2223,7 @@
       "y": -20,
       "type": 1,
       "id": 19,
-      "alive": false,
+      "alive": true,
       "room": "6"
     },
     {
@@ -2232,7 +2232,7 @@
       "y": -60,
       "type": 1,
       "id": 20,
-      "alive": false,
+      "alive": true,
       "room": "6"
     }
   ],
