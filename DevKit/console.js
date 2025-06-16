@@ -4,8 +4,8 @@
 // Parameters:
 //
 
-const release = 0; // Set the release version
-const phase = "BETA"; // Set the phase of the project
+const release = 1; // Set the release version
+const phase = "RELEASE"; // Set the phase of the project
 
 const repo = "SnapBanane/doomstyle"; // Set the repo; format: Username/Reponame (this only works on GitHub).
 
