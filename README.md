@@ -20,10 +20,10 @@ The main features include:
 ## Development Team
 
 - **SnapBanane** - ~45 hours
-- **GamekniteC7** - ~26 hours  
+- **GamekniteC7** - ~35 hours  
 - **PlutoEdiMedi** - ~15 hours
 
-**Total development time: ~86 hours**
+**Total development time: ~95 hours**
 
 ## Disclaimer
 
