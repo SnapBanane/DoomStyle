@@ -116,7 +116,7 @@ export async function startGame() {
   camera.maxZ = 10000;
 
   // Init Health Engine
-  player.health = 100;
+  player.health = 150;
   window.player = player;
 
   //damagePlayer(40); // DEMO CALL DO NOT KEEP IN PRODUCTION CODE
