@@ -86,6 +86,8 @@ export async function startGame() {
   const gravityVector = new BABYLON.Vector3(0, -9.81, 0);
   scene.enablePhysics(gravityVector, physicsPlugin);
 
+  treasureChest(scene, -25, 0, 10);
+
   writeLOG("Initializing body physics...");
   initBodyPhysics(scene);
 

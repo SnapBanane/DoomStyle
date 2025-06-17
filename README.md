@@ -33,6 +33,7 @@ Do not use any part of this project for malicious purposes.
 ## Preview
 
 ![Editor Screenshot](img/screenshots/editor.png)
+![Assignment Handler Screenshot](img/screenshots/assignmentHandler.png)
 
 ## Installation
 
