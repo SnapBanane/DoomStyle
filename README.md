@@ -21,9 +21,9 @@ The main features include:
 
 - **SnapBanane** - ~45 hours
 - **GamekniteC7** - ~35 hours  
-- **PlutoEdiMedi** - ~15 hours
+- **PlutoEdiMedi** - ~20 hours
 
-**Total development time: ~95 hours**
+**Total development time: ~100 hours**
 
 ## Disclaimer
 
